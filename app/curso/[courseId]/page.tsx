@@ -16,6 +16,7 @@ export default function CursoPage() {
   const courseId = params.courseId as string;
   
   const [email, setEmail] = useState('');
+  const [fullName, setFullName] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [step, setStep] = useState<'form' | 'validating' | 'generating' | 'success'>('form');
@@ -27,6 +28,11 @@ export default function CursoPage() {
     
     if (!email.trim()) {
       setError('Por favor ingrese su email');
+      return;
+    }
+
+    if (!fullName.trim()) {
+      setError('Por favor ingrese su nombre y apellido');
       return;
     }
 
@@ -60,7 +66,7 @@ export default function CursoPage() {
         body: JSON.stringify({ 
           courseId, 
           studentEmail: email,
-          studentName: validateData.studentName,
+          studentName: fullName, // Usamos el nombre ingresado por el usuario
           courseName: validateData.courseName,
           instructorName: validateData.courseConfig?.instructorName,
           score: validateData.score
@@ -111,13 +117,35 @@ export default function CursoPage() {
                 Obtén tu Certificado
               </h2>
               <p className="text-gray-600 text-center mb-8">
-                Ingresa el email con el que te registraste en Canvas para generar tu certificado
+                Ingresa tus datos para generar tu certificado
               </p>
 
               <form onSubmit={handleSubmit} className="space-y-6">
                 <div>
+                  <label htmlFor="fullName" className="block text-sm font-semibold text-gray-700 mb-2">
+                    Nombre y Apellido
+                    <span className="text-indigo-600 font-normal text-xs ml-2">
+                      (Este nombre aparecerá en tu certificado)
+                    </span>
+                  </label>
+                  <input
+                    type="text"
+                    id="fullName"
+                    value={fullName}
+                    onChange={(e) => setFullName(e.target.value)}
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent text-gray-900 text-lg"
+                    placeholder="Juan Pérez"
+                    required
+                    disabled={loading}
+                  />
+                </div>
+
+                <div>
                   <label htmlFor="email" className="block text-sm font-semibold text-gray-700 mb-2">
                     Email del Estudiante
+                    <span className="text-gray-500 font-normal text-xs ml-2">
+                      (Debe ser el mismo email registrado en Canvas)
+                    </span>
                   </label>
                   <input
                     type="email"
@@ -252,6 +280,7 @@ export default function CursoPage() {
                     onClick={() => {
                       setStep('form');
                       setEmail('');
+                      setFullName('');
                       setCertificateUrl(null);
                       setValidationUrl(null);
                     }}

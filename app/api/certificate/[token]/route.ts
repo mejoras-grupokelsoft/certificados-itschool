@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { validateStudentCompletion } from '@/lib/canvasAPI';
 import { getCourseConfig } from '@/lib/sheetsConfig';
 import { generateCertificateToken, saveCertificate, getCertificate } from '@/lib/certificateStorage';
-import { generateCertificatePDF } from '@/lib/generatePDF';
+import { generatePDF } from '@/lib/generatePDF';
 import type { CertificateData, CertificateResponse } from '@/lib/types';
 
 const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000';
@@ -145,7 +145,7 @@ export async function GET(
     }
 
     // Generar PDF
-    const pdfBuffer = await generateCertificatePDF(certificateData);
+    const pdfBuffer = await generatePDF(certificateData);
 
     // Retornar PDF como descarga
     const studentNameSafe = (certificateData.studentName || 'estudiante').replace(/\s+/g, '-');
