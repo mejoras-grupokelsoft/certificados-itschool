@@ -11,12 +11,11 @@
   "dependencies": {
     "@netlify/plugin-nextjs": "^5.14.7",
     "@react-pdf/renderer": "^4.3.1",
+    "@sparticuz/chromium": "^141.0.0",
     "@upstash/redis": "^1.35.6",
-    "chrome-aws-lambda": "^10.1.0",
     "googleapis": "^166.0.0",
     "graphql-request": "^7.3.4",
     "next": "16.0.3",
-    "puppeteer": "^24.31.0",
     "puppeteer-core": "^24.31.0",
     "qrcode": "^1.5.4",
     "react": "19.2.0",

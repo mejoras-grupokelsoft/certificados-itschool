@@ -1,4 +1,5 @@
-﻿import puppeteer from 'puppeteer';
+﻿import puppeteer from 'puppeteer-core';
+import chromium from '@sparticuz/chromium';
 import QRCode from 'qrcode';
 import { readFileSync } from 'fs';
 import { join } from 'path';
@@ -20,9 +21,12 @@ export async function generatePDF(certificateData: CertificateData): Promise<Buf
     .replace(/{{INSTRUCTOR_NAME}}/g, certificateData.instructorName)
     .replace(/{{QR_CODE_URL}}/g, qrCodeDataUrl);
 
+  // En producción (Netlify), usar chromium empaquetado
   const browser = await puppeteer.launch({
-    headless: true,
-    args: ['--no-sandbox', '--disable-setuid-sandbox'],
+    args: chromium.args,
+    defaultViewport: chromium.defaultViewport,
+    executablePath: await chromium.executablePath(),
+    headless: chromium.headless,
   });
 
   const page = await browser.newPage();
