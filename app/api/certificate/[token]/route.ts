@@ -150,7 +150,10 @@ export async function GET(
     // Retornar PDF como descarga
     const filename = `certificado-${certificateData.studentName.replace(/\s+/g, '-')}-${certificateData.courseId}.pdf`;
     
-    return new NextResponse(pdfBuffer, {
+    // Convertir Buffer a Uint8Array para NextResponse
+    const uint8 = new Uint8Array(pdfBuffer);
+    
+    return new NextResponse(uint8, {
       status: 200,
       headers: {
         'Content-Type': 'application/pdf',
