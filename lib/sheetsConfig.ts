@@ -94,11 +94,3 @@ export function clearConfigCache(): void {
   configCache = null;
   cacheTimestamp = 0;
 }
-
-/**
- * Verifica si un curso está habilitado para generar certificados
- */
-export async function isCourseEnabled(courseId: string): Promise<boolean> {
-  const config = await getCourseConfig(courseId);
-  return config !== null && config.enabled;
-}
