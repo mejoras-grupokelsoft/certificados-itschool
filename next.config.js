@@ -1,6 +1,11 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  // Sin output: 'standalone' para que Netlify maneje las rutas correctamente
+  // Configuración para que funcione en Netlify con App Router
+  experimental: {
+    serverActions: {
+      bodySizeLimit: '2mb',
+    },
+  },
 };
 
 module.exports = nextConfig;
