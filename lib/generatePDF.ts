@@ -21,7 +21,7 @@ export async function generateCertificatePDF(
 
   // Generar PDF usando React PDF
   const pdfBuffer = await renderToBuffer(
-    CertificadoPDF({ data: certificateData, qrCodeDataUrl })
+    <CertificadoPDF data={certificateData} qrCodeDataUrl={qrCodeDataUrl} />
   );
 
   return pdfBuffer;
