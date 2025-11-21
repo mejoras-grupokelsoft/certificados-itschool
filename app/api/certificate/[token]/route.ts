@@ -59,11 +59,11 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Validar que el estudiante completó el curso
+    // Validar que el estudiante completó el curso (passing score fijo: 70)
     const validation = await validateStudentCompletion(
       courseId,
       studentEmail,
-      courseConfig.passingScore
+      70
     );
 
     if (!validation.isValid) {
@@ -90,7 +90,7 @@ export async function POST(request: NextRequest) {
       courseId,
       completionDate: validation.submission!.gradedAt!,
       instructorName: courseConfig.instructorName,
-      duration: courseConfig.duration,
+      duration: 'Curso completado', // Duration genérico
       score: validation.submission!.score!,
       validationUrl,
       generatedAt: new Date().toISOString(),

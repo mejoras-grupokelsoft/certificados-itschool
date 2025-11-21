@@ -3,9 +3,6 @@ export interface CourseConfig {
   courseId: string;
   courseName: string;
   instructorName: string;
-  duration: string;
-  passingScore: number;
-  enabled: boolean;
 }
 
 // Tipos para la validación de estudiantes desde Canvas

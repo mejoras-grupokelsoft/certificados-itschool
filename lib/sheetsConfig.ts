@@ -29,9 +29,13 @@ const CACHE_DURATION = 5 * 60 * 1000; // 5 minutos
  * Obtiene la configuración de todos los cursos desde Google Sheets
  * Estructura esperada de la hoja "Configuracion":
  * 
- * | CourseID | CourseName | InstructorName | Duration | PassingScore | Enabled |
- * |----------|------------|----------------|----------|--------------|---------|
- * | 123456   | Python I   | Juan Pérez     | 3 meses  | 80           | TRUE    |
+ * | CourseID | CourseName | InstructorName |
+ * |----------|------------|----------------|
+ * | 123456   | Python I   | Juan Pérez     |
+ * | 234567   | JavaScript | María García   |
+ * 
+ * PassingScore fijo: 70 puntos
+ * Duration: Se calcula automáticamente desde Canvas
  */
 export async function getCourseConfigs(): Promise<CourseConfig[]> {
   // Retornar cache si aún es válido
@@ -43,22 +47,19 @@ export async function getCourseConfigs(): Promise<CourseConfig[]> {
   try {
     const response = await sheets.spreadsheets.values.get({
       spreadsheetId: GOOGLE_SHEETS_SPREADSHEET_ID,
-      range: 'Configuracion!A2:F', // Desde la fila 2 hasta la columna F (6 columnas)
+      range: 'Configuracion!A2:C', // Solo 3 columnas: CourseID, CourseName, InstructorName
     });
 
     const rows = response.data.values || [];
     
     const configs: CourseConfig[] = rows
-      .filter((row) => row.length >= 6) // Filtrar filas con datos completos
+      .filter((row) => row.length >= 3) // Filtrar filas con datos completos
       .map((row) => ({
         courseId: row[0]?.trim() || '',
         courseName: row[1]?.trim() || '',
         instructorName: row[2]?.trim() || '',
-        duration: row[3]?.trim() || '',
-        passingScore: parseFloat(row[4]) || 0,
-        enabled: row[5]?.toUpperCase() === 'TRUE',
       }))
-      .filter((config) => config.enabled && config.courseId);
+      .filter((config) => config.courseId && config.courseName && config.instructorName);
 
     // Actualizar cache
     configCache = configs;

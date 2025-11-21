@@ -67,11 +67,11 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Validar completitud del estudiante en Canvas
+    // Validar completitud del estudiante en Canvas (passing score fijo: 70)
     const validation = await validateStudentCompletion(
       courseId,
       studentEmail,
-      courseConfig.passingScore
+      70
     );
 
     if (!validation.isValid) {
