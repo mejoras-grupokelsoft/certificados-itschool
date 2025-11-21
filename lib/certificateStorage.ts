@@ -1,6 +1,10 @@
-import { kv } from '@vercel/kv';
+import { Redis } from '@upstash/redis';
 import { randomBytes } from 'crypto';
 import type { CertificateData } from './types';
+
+// Configurar cliente de Redis con Upstash
+// Usa las variables de entorno UPSTASH_REDIS_REST_URL y UPSTASH_REDIS_REST_TOKEN
+const redis = Redis.fromEnv();
 
 /**
  * Genera un token único para el certificado
@@ -10,7 +14,7 @@ export function generateCertificateToken(): string {
 }
 
 /**
- * Guarda los datos del certificado en Vercel KV (Redis)
+ * Guarda los datos del certificado en Upstash Redis
  * La key usa el formato: certificate:{token}
  * Los datos se guardan indefinidamente (sin expiración)
  */
@@ -19,22 +23,22 @@ export async function saveCertificate(
   data: CertificateData
 ): Promise<void> {
   const key = `certificate:${token}`;
-  await kv.set(key, JSON.stringify(data));
+  await redis.set(key, JSON.stringify(data));
 }
 
 /**
- * Recupera los datos de un certificado desde Vercel KV
+ * Recupera los datos de un certificado desde Upstash Redis
  */
 export async function getCertificate(token: string): Promise<CertificateData | null> {
   const key = `certificate:${token}`;
-  const data = await kv.get<string>(key);
+  const data = await redis.get<string>(key);
   
   if (!data) {
     return null;
   }
   
   try {
-    return JSON.parse(data) as CertificateData;
+    return typeof data === 'string' ? JSON.parse(data) : data as CertificateData;
   } catch {
     return null;
   }
@@ -45,7 +49,7 @@ export async function getCertificate(token: string): Promise<CertificateData | n
  */
 export async function certificateExists(token: string): Promise<boolean> {
   const key = `certificate:${token}`;
-  const exists = await kv.exists(key);
+  const exists = await redis.exists(key);
   return exists === 1;
 }
 
@@ -54,7 +58,7 @@ export async function certificateExists(token: string): Promise<boolean> {
  * CUIDADO: Puede ser costoso en producción si hay muchos certificados
  */
 export async function listCertificates(limit: number = 100): Promise<string[]> {
-  const keys = await kv.keys('certificate:*');
+  const keys = await redis.keys('certificate:*');
   return keys.slice(0, limit);
 }
 
@@ -63,6 +67,6 @@ export async function listCertificates(limit: number = 100): Promise<string[]> {
  */
 export async function deleteCertificate(token: string): Promise<boolean> {
   const key = `certificate:${token}`;
-  const deleted = await kv.del(key);
+  const deleted = await redis.del(key);
   return deleted === 1;
 }
