@@ -57,7 +57,14 @@ export default function CursoPage() {
       const certificateResponse = await fetch('/api/certificate', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ courseId, studentEmail: email }),
+        body: JSON.stringify({ 
+          courseId, 
+          studentEmail: email,
+          studentName: validateData.studentName,
+          courseName: validateData.courseName,
+          instructorName: validateData.courseConfig?.instructorName,
+          score: validateData.score
+        }),
       });
 
       const certificateData = await certificateResponse.json();

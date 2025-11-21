@@ -48,11 +48,15 @@ const GET_COURSE_ASSIGNMENTS = `
   }
 `;
 
-// Query para obtener submissions de un assignment
+// Query para obtener submissions de un assignment (con paginación)
 const GET_ASSIGNMENT_SUBMISSIONS = `
-  query GetAssignmentSubmissions($assignmentId: ID!) {
+  query GetAssignmentSubmissions($assignmentId: ID!, $after: String) {
     assignment(id: $assignmentId) {
-      submissionsConnection {
+      submissionsConnection(first: 100, after: $after) {
+        pageInfo {
+          hasNextPage
+          endCursor
+        }
         nodes {
           _id
           score
@@ -62,7 +66,6 @@ const GET_ASSIGNMENT_SUBMISSIONS = `
           user {
             _id
           }
-          workflowState
         }
       }
     }
@@ -75,9 +78,19 @@ export async function validateStudentInCourse(
   studentEmail: string
 ): Promise<CanvasStudent | null> {
   try {
+    console.log(`🔍 Buscando estudiante con email: ${studentEmail} en curso: ${courseId}`);
     const data: any = await client.request(GET_COURSE_ENROLLMENTS, { courseId });
     
     const enrollments: CanvasEnrollment[] = data.course?.enrollmentsConnection?.nodes || [];
+    console.log(`📊 Total enrollments encontrados: ${enrollments.length}`);
+    
+    // Mostrar TODOS los emails para debug
+    if (enrollments.length > 0) {
+      console.log('📧 TODOS los emails del curso:');
+      enrollments.forEach((e, idx) => {
+        console.log(`  ${idx + 1}. ${e.user.email} - ${e.user.name}`);
+      });
+    }
     
     // Buscar el estudiante por email
     const enrollment = enrollments.find(
@@ -85,8 +98,11 @@ export async function validateStudentInCourse(
     );
     
     if (!enrollment) {
+      console.log('❌ Email no encontrado en enrollments');
       return null;
     }
+    
+    console.log(`✅ Estudiante encontrado: ${enrollment.user.name}`);
     
     return {
       userId: enrollment.user._id,
@@ -106,14 +122,38 @@ export async function getStudentSubmission(
   userId: string
 ): Promise<CanvasSubmission | null> {
   try {
-    const data: any = await client.request(GET_ASSIGNMENT_SUBMISSIONS, { assignmentId });
+    console.log(`📄 Buscando submission para userId: ${userId} en assignment: ${assignmentId}`);
     
-    const submissions: CanvasSubmissionNode[] = data.assignment?.submissionsConnection?.nodes || [];
+    // Obtener TODAS las submissions con paginación
+    let allSubmissions: CanvasSubmissionNode[] = [];
+    let hasNextPage = true;
+    let after: string | null = null;
+    
+    while (hasNextPage) {
+      const data: any = await client.request(GET_ASSIGNMENT_SUBMISSIONS, { 
+        assignmentId,
+        after 
+      });
+      
+      const connection = data.assignment?.submissionsConnection;
+      const submissions = connection?.nodes || [];
+      allSubmissions = allSubmissions.concat(submissions);
+      
+      hasNextPage = connection?.pageInfo?.hasNextPage || false;
+      after = connection?.pageInfo?.endCursor || null;
+      
+      console.log(`📊 Página obtenida: ${submissions.length} submissions (Total acumulado: ${allSubmissions.length})`);
+    }
+    
+    console.log(`📊 Total final de submissions: ${allSubmissions.length}`);
     
     // Buscar la submission del usuario específico
-    const submission = submissions.find((s) => s.user._id === userId);
+    const submission = allSubmissions.find((s) => s.user._id === userId);
     
-    if (!submission) {
+    if (submission) {
+      console.log(`✅ Submission encontrada: Score=${submission.score}, Graded=${submission.gradedAt ? 'Sí' : 'No'}`);
+    } else {
+      console.log(`❌ No se encontró submission para userId ${userId}`);
       return null;
     }
     
@@ -124,7 +164,7 @@ export async function getStudentSubmission(
       grade: submission.grade,
       submittedAt: submission.submittedAt,
       gradedAt: submission.gradedAt,
-      workflowState: submission.workflowState,
+      workflowState: 'graded', // Valor por defecto ya que Canvas no expone este campo
     };
   } catch (error) {
     console.error('Error obteniendo submission de Canvas:', error);
@@ -138,14 +178,31 @@ export async function findFinalExamAssignment(courseId: string): Promise<string 
     const data: any = await client.request(GET_COURSE_ASSIGNMENTS, { courseId });
     const assignments = data.course?.assignmentsConnection?.nodes || [];
     
-    // Buscar assignment que contenga "test final", "examen final", o "final"
+    console.log('📚 Assignments encontrados en el curso:');
+    assignments.forEach((a: any, idx: number) => {
+      console.log(`  ${idx + 1}. "${a.name}" (ID: ${a._id})`);
+    });
+    
+    // Buscar assignment que contenga "test final" o "examen final"
+    // EXCLUIR "Trabajo Práctico Final" o "TP Final"
     const finalExam = assignments.find((a: any) => {
       const name = a.name.toLowerCase();
-      return name.includes('test final') || 
-             name.includes('examen final') || 
-             name.includes('final exam') ||
-             (name.includes('final') && name.includes('test'));
+      const isTest = name.includes('test final') || 
+                     name.includes('examen final') || 
+                     name.includes('final exam') ||
+                     name.includes('evaluación integral');
+      const isTP = name.includes('trabajo práctico') || 
+                   name.includes('trabajo practico') ||
+                   name.includes('tp final');
+      
+      return isTest && !isTP;
     });
+    
+    if (finalExam) {
+      console.log(`✅ Test Final encontrado: "${finalExam.name}" (ID: ${finalExam._id})`);
+    } else {
+      console.log('❌ No se encontró Test Final en el curso');
+    }
     
     return finalExam?._id || null;
   } catch (error) {

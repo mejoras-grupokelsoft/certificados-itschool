@@ -148,7 +148,8 @@ export async function GET(
     const pdfBuffer = await generateCertificatePDF(certificateData);
 
     // Retornar PDF como descarga
-    const filename = `certificado-${certificateData.studentName.replace(/\s+/g, '-')}-${certificateData.courseId}.pdf`;
+    const studentNameSafe = (certificateData.studentName || 'estudiante').replace(/\s+/g, '-');
+    const filename = `certificado-${studentNameSafe}-${certificateData.courseId}.pdf`;
     
     // Convertir Buffer a Uint8Array para NextResponse
     const uint8 = new Uint8Array(pdfBuffer);

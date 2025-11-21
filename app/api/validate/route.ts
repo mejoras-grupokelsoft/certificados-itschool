@@ -30,9 +30,12 @@ export async function POST(request: NextRequest) {
     // Parsear el body
     const body = await request.json();
     const { courseId, studentEmail } = body;
-
+    
+    console.log('📝 Validando:', { courseId, studentEmail });
+    
     // Validar parámetros requeridos
     if (!courseId || !studentEmail) {
+      console.error('❌ Faltan parámetros');
       return NextResponse.json(
         {
           success: false,
@@ -40,9 +43,7 @@ export async function POST(request: NextRequest) {
         } as ValidationResponse,
         { status: 400 }
       );
-    }
-
-    // Validar formato de email
+    }    // Validar formato de email
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(studentEmail)) {
       return NextResponse.json(
@@ -55,9 +56,11 @@ export async function POST(request: NextRequest) {
     }
 
     // Obtener configuración del curso
+    console.log('📋 Buscando configuración del curso...');
     const courseConfig = await getCourseConfig(courseId);
     
     if (!courseConfig) {
+      console.error('❌ Curso no encontrado en Google Sheets');
       return NextResponse.json(
         {
           success: false,
@@ -66,8 +69,11 @@ export async function POST(request: NextRequest) {
         { status: 404 }
       );
     }
+    
+    console.log('✅ Curso encontrado:', courseConfig);
 
     // Validar completitud del estudiante en Canvas (passing score fijo: 70)
+    console.log('🎓 Validando en Canvas...');
     const validation = await validateStudentCompletion(
       courseId,
       studentEmail,
@@ -75,6 +81,7 @@ export async function POST(request: NextRequest) {
     );
 
     if (!validation.isValid) {
+      console.error('❌ Validación falló:', validation.message);
       return NextResponse.json(
         {
           success: false,
@@ -83,6 +90,8 @@ export async function POST(request: NextRequest) {
         { status: 400 }
       );
     }
+    
+    console.log('✅ Estudiante validado:', validation.student?.name);
 
     // Estudiante validado correctamente
     return NextResponse.json(
