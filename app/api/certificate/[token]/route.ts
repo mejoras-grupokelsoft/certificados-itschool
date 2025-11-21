@@ -1,10 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { renderToBuffer } from '@react-pdf/renderer';
-import QRCode from 'qrcode';
 import { validateStudentCompletion } from '@/lib/canvasAPI';
 import { getCourseConfig } from '@/lib/sheetsConfig';
 import { generateCertificateToken, saveCertificate, getCertificate } from '@/lib/certificateStorage';
-import { CertificadoPDF } from '@/lib/CertificadoPDF';
+import { generateCertificatePDF } from '@/lib/generatePDF';
 import type { CertificateData, CertificateResponse } from '@/lib/types';
 
 const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000';
@@ -96,16 +94,6 @@ export async function POST(request: NextRequest) {
       generatedAt: new Date().toISOString(),
     };
 
-    // Generar QR code como Data URL
-    const qrCodeDataUrl = await QRCode.toDataURL(validationUrl, {
-      width: 300,
-      margin: 2,
-      color: {
-        dark: '#000000',
-        light: '#FFFFFF',
-      },
-    });
-
     // Guardar datos del certificado en Redis
     await saveCertificate(token, certificateData);
 
@@ -155,20 +143,8 @@ export async function GET(
       );
     }
 
-    // Generar QR code
-    const qrCodeDataUrl = await QRCode.toDataURL(certificateData.validationUrl, {
-      width: 300,
-      margin: 2,
-      color: {
-        dark: '#000000',
-        light: '#FFFFFF',
-      },
-    });
-
     // Generar PDF
-    const pdfBuffer = await renderToBuffer(
-      <CertificadoPDF data={certificateData} qrCodeDataUrl={qrCodeDataUrl} />
-    );
+    const pdfBuffer = await generateCertificatePDF(certificateData);
 
     // Retornar PDF como descarga
     const filename = `certificado-${certificateData.studentName.replace(/\s+/g, '-')}-${certificateData.courseId}.pdf`;
