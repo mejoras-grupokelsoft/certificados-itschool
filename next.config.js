@@ -1,7 +1,6 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  // Configuración para Netlify
-  output: 'standalone',
+  // Sin output: 'standalone' para que Netlify maneje las rutas correctamente
 };
 
 module.exports = nextConfig;
