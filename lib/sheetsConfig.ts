@@ -29,9 +29,9 @@ const CACHE_DURATION = 5 * 60 * 1000; // 5 minutos
  * Obtiene la configuración de todos los cursos desde Google Sheets
  * Estructura esperada de la hoja "Configuracion":
  * 
- * | CourseID | CourseName | AssignmentID | AssignmentName | PassingScore | Enabled | Template | InstructorName | Duration |
- * |----------|------------|--------------|----------------|--------------|---------|----------|----------------|----------|
- * | 123456   | Python I   | 789012       | Test Final     | 80           | TRUE    | default  | Juan Pérez     | 3 meses  |
+ * | CourseID | CourseName | InstructorName | Duration | PassingScore | Enabled |
+ * |----------|------------|----------------|----------|--------------|---------|
+ * | 123456   | Python I   | Juan Pérez     | 3 meses  | 80           | TRUE    |
  */
 export async function getCourseConfigs(): Promise<CourseConfig[]> {
   // Retornar cache si aún es válido
@@ -43,25 +43,22 @@ export async function getCourseConfigs(): Promise<CourseConfig[]> {
   try {
     const response = await sheets.spreadsheets.values.get({
       spreadsheetId: GOOGLE_SHEETS_SPREADSHEET_ID,
-      range: 'Configuracion!A2:I', // Desde la fila 2 hasta la columna I (9 columnas)
+      range: 'Configuracion!A2:F', // Desde la fila 2 hasta la columna F (6 columnas)
     });
 
     const rows = response.data.values || [];
     
     const configs: CourseConfig[] = rows
-      .filter((row) => row.length >= 9) // Filtrar filas con datos completos
+      .filter((row) => row.length >= 6) // Filtrar filas con datos completos
       .map((row) => ({
         courseId: row[0]?.trim() || '',
         courseName: row[1]?.trim() || '',
-        assignmentId: row[2]?.trim() || '',
-        assignmentName: row[3]?.trim() || '',
+        instructorName: row[2]?.trim() || '',
+        duration: row[3]?.trim() || '',
         passingScore: parseFloat(row[4]) || 0,
         enabled: row[5]?.toUpperCase() === 'TRUE',
-        certificateTemplate: row[6]?.trim() || 'default',
-        instructorName: row[7]?.trim() || '',
-        duration: row[8]?.trim() || '',
       }))
-      .filter((config) => config.enabled && config.courseId && config.assignmentId);
+      .filter((config) => config.enabled && config.courseId);
 
     // Actualizar cache
     configCache = configs;

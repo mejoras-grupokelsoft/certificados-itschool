@@ -70,7 +70,6 @@ export async function POST(request: NextRequest) {
     // Validar completitud del estudiante en Canvas
     const validation = await validateStudentCompletion(
       courseId,
-      courseConfig.assignmentId,
       studentEmail,
       courseConfig.passingScore
     );

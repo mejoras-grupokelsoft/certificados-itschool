@@ -62,7 +62,6 @@ export async function POST(request: NextRequest) {
     // Validar que el estudiante completó el curso
     const validation = await validateStudentCompletion(
       courseId,
-      courseConfig.assignmentId,
       studentEmail,
       courseConfig.passingScore
     );

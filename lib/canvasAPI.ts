@@ -33,6 +33,21 @@ const GET_COURSE_ENROLLMENTS = `
   }
 `;
 
+// Query para obtener assignments de un curso
+const GET_COURSE_ASSIGNMENTS = `
+  query GetCourseAssignments($courseId: ID!) {
+    course(id: $courseId) {
+      assignmentsConnection {
+        nodes {
+          _id
+          name
+          pointsPossible
+        }
+      }
+    }
+  }
+`;
+
 // Query para obtener submissions de un assignment
 const GET_ASSIGNMENT_SUBMISSIONS = `
   query GetAssignmentSubmissions($assignmentId: ID!) {
@@ -117,10 +132,31 @@ export async function getStudentSubmission(
   }
 }
 
-// Función para validar si un estudiante completó un assignment con puntaje mínimo
+// Función para buscar el assignment "Test Final" o similar en un curso
+export async function findFinalExamAssignment(courseId: string): Promise<string | null> {
+  try {
+    const data: any = await client.request(GET_COURSE_ASSIGNMENTS, { courseId });
+    const assignments = data.course?.assignmentsConnection?.nodes || [];
+    
+    // Buscar assignment que contenga "test final", "examen final", o "final"
+    const finalExam = assignments.find((a: any) => {
+      const name = a.name.toLowerCase();
+      return name.includes('test final') || 
+             name.includes('examen final') || 
+             name.includes('final exam') ||
+             (name.includes('final') && name.includes('test'));
+    });
+    
+    return finalExam?._id || null;
+  } catch (error) {
+    console.error('Error buscando assignment final:', error);
+    return null;
+  }
+}
+
+// Función para validar si un estudiante completó un curso con puntaje mínimo
 export async function validateStudentCompletion(
   courseId: string,
-  assignmentId: string,
   studentEmail: string,
   passingScore: number
 ): Promise<{
@@ -140,28 +176,39 @@ export async function validateStudentCompletion(
       };
     }
     
-    // 2. Obtener la submission del assignment
+    // 2. Buscar el assignment "Test Final" automáticamente
+    const assignmentId = await findFinalExamAssignment(courseId);
+    
+    if (!assignmentId) {
+      return {
+        isValid: false,
+        student,
+        message: 'No se encontró un "Test Final" o "Examen Final" en este curso',
+      };
+    }
+    
+    // 3. Obtener la submission del assignment
     const submission = await getStudentSubmission(assignmentId, student.userId);
     
     if (!submission) {
       return {
         isValid: false,
         student,
-        message: 'No se encontró una entrega para este assignment',
+        message: 'No se encontró una entrega para el examen final',
       };
     }
     
-    // 3. Validar que la submission está calificada
+    // 4. Validar que la submission está calificada
     if (!submission.gradedAt || submission.score === null) {
       return {
         isValid: false,
         student,
         submission,
-        message: 'La entrega aún no ha sido calificada',
+        message: 'El examen final aún no ha sido calificado',
       };
     }
     
-    // 4. Validar que el puntaje cumple con el mínimo
+    // 5. Validar que el puntaje cumple con el mínimo
     if (submission.score < passingScore) {
       return {
         isValid: false,
@@ -171,7 +218,7 @@ export async function validateStudentCompletion(
       };
     }
     
-    // 5. Todo OK - estudiante aprobó
+    // 6. Todo OK - estudiante aprobó
     return {
       isValid: true,
       student,
