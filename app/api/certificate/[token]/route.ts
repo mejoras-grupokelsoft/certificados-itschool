@@ -128,9 +128,10 @@ export async function POST(request: NextRequest) {
  */
 export async function GET(
   request: NextRequest,
-  { params }: { params: { token: string } }
+  context: any
 ) {
   try {
+    const params = await context.params;
     const { token } = params;
 
     // Recuperar datos del certificado
