@@ -24,7 +24,7 @@ export async function generatePDF(certificateData: CertificateData): Promise<Buf
   // En producción (Netlify), usar chromium empaquetado
   const browser = await puppeteer.launch({
     args: chromium.args,
-    defaultViewport: chromium.defaultViewport,
+    defaultViewport: null, // Usar viewport del navegador real
     executablePath: await chromium.executablePath(),
     headless: chromium.headless,
   });
