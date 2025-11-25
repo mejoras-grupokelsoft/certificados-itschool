@@ -14,11 +14,15 @@ const client = new GraphQLClient(CANVAS_BASE_URL, {
   },
 });
 
-// Query para obtener enrollments de un curso
+// Query para obtener enrollments de un curso (con paginación)
 const GET_COURSE_ENROLLMENTS = `
-  query GetCourseEnrollments($courseId: ID!) {
+  query GetCourseEnrollments($courseId: ID!, $after: String) {
     course(id: $courseId) {
-      enrollmentsConnection(filter: {types: [StudentEnrollment]}) {
+      enrollmentsConnection(first: 100, after: $after, filter: {types: [StudentEnrollment]}) {
+        pageInfo {
+          hasNextPage
+          endCursor
+        }
         nodes {
           _id
           user {
@@ -79,26 +83,41 @@ export async function validateStudentInCourse(
 ): Promise<CanvasStudent | null> {
   try {
     console.log(`🔍 Buscando estudiante con email: ${studentEmail} en curso: ${courseId}`);
-    const data: any = await client.request(GET_COURSE_ENROLLMENTS, { courseId });
     
-    const enrollments: CanvasEnrollment[] = data.course?.enrollmentsConnection?.nodes || [];
-    console.log(`📊 Total enrollments encontrados: ${enrollments.length}`);
+    // Obtener todos los enrollments con paginación
+    let allEnrollments: CanvasEnrollment[] = [];
+    let hasNextPage = true;
+    let after: string | null = null;
     
-    // Mostrar TODOS los emails para debug
-    if (enrollments.length > 0) {
-      console.log('📧 TODOS los emails del curso:');
-      enrollments.forEach((e, idx) => {
-        console.log(`  ${idx + 1}. ${e.user.email} - ${e.user.name}`);
-      });
+    while (hasNextPage) {
+      const data: any = await client.request(GET_COURSE_ENROLLMENTS, { courseId, after });
+      const pageData = data.course?.enrollmentsConnection;
+      
+      if (!pageData) break;
+      
+      const enrollments: CanvasEnrollment[] = pageData.nodes || [];
+      allEnrollments = [...allEnrollments, ...enrollments];
+      
+      console.log(`📄 Página obtenida: ${enrollments.length} enrollments (Total: ${allEnrollments.length})`);
+      
+      hasNextPage = pageData.pageInfo?.hasNextPage || false;
+      after = pageData.pageInfo?.endCursor || null;
     }
     
+    console.log(`📊 Total enrollments encontrados: ${allEnrollments.length}`);
+    
     // Buscar el estudiante por email
-    const enrollment = enrollments.find(
+    const enrollment = allEnrollments.find(
       (e) => e.user.email.toLowerCase() === studentEmail.toLowerCase()
     );
     
     if (!enrollment) {
       console.log('❌ Email no encontrado en enrollments');
+      // Mostrar primeros 5 emails para debug
+      console.log('📧 Primeros 5 emails del curso:');
+      allEnrollments.slice(0, 5).forEach((e, idx) => {
+        console.log(`  ${idx + 1}. ${e.user.email} - ${e.user.name}`);
+      });
       return null;
     }
     
