@@ -148,8 +148,14 @@ export async function GET(
     const pdfBuffer = await generatePDF(certificateData);
 
     // Retornar PDF como descarga
-    const studentNameSafe = (certificateData.studentName || 'estudiante').replace(/\s+/g, '-');
-    const filename = `certificado-${studentNameSafe}-${certificateData.courseId}.pdf`;
+    const studentNameSafe = (certificateData.studentName || 'estudiante')
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '') // Quitar acentos
+      .replace(/[^a-zA-Z0-9]/g, '-')   // Solo alfanuméricos y guiones
+      .replace(/-+/g, '-')             // Múltiples guiones a uno solo
+      .replace(/^-|-$/g, '');          // Quitar guiones al inicio/fin
+    
+    const filename = `Certificado-${studentNameSafe}-ITSchool.pdf`;
     
     // Convertir Buffer a Uint8Array para NextResponse
     const uint8 = new Uint8Array(pdfBuffer);
@@ -158,7 +164,7 @@ export async function GET(
       status: 200,
       headers: {
         'Content-Type': 'application/pdf',
-        'Content-Disposition': `attachment; filename="${filename}"`,
+        'Content-Disposition': `inline; filename="${filename}"; filename*=UTF-8''${encodeURIComponent(filename)}`,
         'Cache-Control': 'public, max-age=31536000, immutable',
       },
     });
