@@ -26,7 +26,7 @@ export async function generatePDF(certificateData: CertificateData): Promise<Buf
     args: chromium.args,
     defaultViewport: null, // Usar viewport del navegador real
     executablePath: await chromium.executablePath(),
-    headless: chromium.headless,
+    headless: true, // Siempre headless en producción
   });
 
   const page = await browser.newPage();
