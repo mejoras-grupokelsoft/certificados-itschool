@@ -7,6 +7,7 @@ export default function HomePage() {
         <div className="text-center mb-16">
           <h1 className="text-6xl font-bold text-indigo-600 mb-4">IT SCHOOL</h1>
           <p className="text-gray-600 text-xl">Instituto de Tecnología y Desarrollo de Software</p>
+          <p className="text-sm text-indigo-500 mt-2">[TESTING BRANCH]</p>
         </div>
         <div className="max-w-4xl mx-auto">
           <div className="bg-white rounded-2xl shadow-xl p-12 mb-8">
