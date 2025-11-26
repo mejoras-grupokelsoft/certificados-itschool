@@ -144,10 +144,18 @@ export async function GET(
       );
     }
 
+    console.log('📄 Generando PDF para:', {
+      student: certificateData.studentName,
+      course: certificateData.courseName,
+      token: token.substring(0, 10) + '...'
+    });
+
     // Generar PDF
     const pdfBuffer = await generatePDF(certificateData);
+    
+    console.log('✅ PDF generado exitosamente, tamaño:', pdfBuffer.length, 'bytes');
 
-    // Retornar PDF como descarga
+    // Normalizar nombre del estudiante
     const studentNameSafe = (certificateData.studentName || 'estudiante')
       .normalize('NFD')
       .replace(/[\u0300-\u036f]/g, '') // Quitar acentos
@@ -155,7 +163,18 @@ export async function GET(
       .replace(/-+/g, '-')             // Múltiples guiones a uno solo
       .replace(/^-|-$/g, '');          // Quitar guiones al inicio/fin
     
-    const filename = `Certificado-${studentNameSafe}-ITSchool.pdf`;
+    // Normalizar nombre del curso
+    const courseNameSafe = (certificateData.courseName || 'Curso')
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '')
+      .replace(/[^a-zA-Z0-9]/g, '-')
+      .replace(/-+/g, '-')
+      .replace(/^-|-$/g, '')
+      .substring(0, 50); // Limitar longitud
+    
+    const filename = `Certificado-${courseNameSafe}-${studentNameSafe}.pdf`;
+    
+    console.log('📥 Enviando PDF con nombre:', filename);
     
     // Convertir Buffer a Uint8Array para NextResponse
     const uint8 = new Uint8Array(pdfBuffer);
@@ -169,10 +188,14 @@ export async function GET(
       },
     });
   } catch (error) {
-    console.error('Error en GET /api/certificate/[token]:', error);
+    console.error('❌ Error en GET /api/certificate/[token]:', error);
+    console.error('Error completo:', JSON.stringify(error, null, 2));
     
     return NextResponse.json(
-      { error: 'Error generando el certificado' },
+      { 
+        error: 'Error generando el certificado',
+        details: error instanceof Error ? error.message : 'Unknown error'
+      },
       { status: 500 }
     );
   }
