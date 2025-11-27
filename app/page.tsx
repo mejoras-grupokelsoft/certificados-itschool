@@ -6,7 +6,6 @@
           <div className="bg-white rounded-2xl shadow-xl p-12 text-center">
             <div className="mb-8">
               <h1 className="text-7xl font-bold text-indigo-600 mb-4">ITSCHOOL</h1>
-              <p className="text-gray-600 text-xl">Instituto de Tecnología y Desarrollo de Software</p>
             </div>
             
             <div className="bg-gradient-to-r from-indigo-50 to-purple-50 rounded-xl p-8 my-8">
@@ -25,8 +24,8 @@
             <div className="mt-8 pt-8 border-t border-gray-200">
               <p className="text-gray-500 text-sm">
                 Para más información contactanos en{' '}
-                <a href="mailto:contacto@itschool.com.ar" className="text-indigo-600 hover:text-indigo-700 font-semibold">
-                  contacto@itschool.com.ar
+                <a href="mailto:itschool@grupokelsoft.com" className="text-indigo-600 hover:text-indigo-700 font-semibold">
+                  itschool@grupokelsoft.com
                 </a>
               </p>
             </div>
