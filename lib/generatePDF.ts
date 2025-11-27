@@ -39,33 +39,41 @@ export async function generatePDF(certificateData: CertificateData): Promise<Buf
     const qrImage = await pdfDoc.embedPng(qrBytes);
     console.log(' QR code generado');
     
-    // COORDENADAS BASADAS EN TU DISEÑO DE FIGMA (A4 landscape = 842 x 595 pts)
-    // Conversión: Figma usa píxeles, pdf-lib usa puntos (1:1 en web)
+    // COORDENADAS BASADAS EN DISEÑO - MEDIDAS EN CM (convertidas a puntos)
+    // Conversión: 1cm = 28.35 puntos
     // Origen en pdf-lib: esquina inferior izquierda
+    // Template real: width x height en puntos
     
     // Color azul corporativo: #4285F4
     const blueColor = rgb(0.259, 0.522, 0.957); // #4285F4
     
+    // Función helper para convertir CM a puntos
+    const cmToPts = (cm: number) => cm * 28.35;
+    
     // 1. TÍTULO DEL CURSO
-    // Posición Figma: x=45, y=377 (desde arriba)
-    // Convertir y desde arriba: 595 - 377 = 218
-    const courseFontSize = 14; // Tamaño según especificación
+    // Posición: x=1.06cm, y=8.54cm (desde arriba)
+    // Tamaño máximo: ancho 15.78cm, alto 3.93cm
+    // Convertir y desde arriba a coordenadas de PDF: height - y_cm_en_pts
+    const courseFontSize = 14;
     const courseText = certificateData.courseName;
+    const courseX = cmToPts(1.06);
+    const courseY = height - cmToPts(8.54);
+    const courseMaxWidth = cmToPts(15.78); // Ancho máximo 15.78cm
+    
     firstPage.drawText(courseText, {
-      x: 45,
-      y: 218,
+      x: courseX,
+      y: courseY,
       size: courseFontSize,
       font: fontBold,
       color: blueColor,
-      maxWidth: 750, // Permitir títulos largos
+      maxWidth: courseMaxWidth,
     });
     
     // 2. Texto "Desde ITSCHOOL certificamos que [NOMBRE] ha finalizado y aprobado el curso."
-    // Posición: x=1.06cm (30pts), y=13.25cm desde arriba
-    // Convertir: 1.06cm = 30pts, 13.25cm = 375pts desde arriba → 595 - 375 = 220pts
+    // Posición: x=1.06cm, y=13.25cm desde arriba
     const textFontSize = 14;
-    const xText = 30; // 1.06cm ≈ 30pts
-    const line1Y = 220; // 13.25cm desde arriba
+    const xText = cmToPts(1.06);
+    const line1Y = height - cmToPts(13.25);
     
     const beforeName = "Desde ITSCHOOL certificamos que ";
     const studentName = certificateData.studentName;
@@ -101,10 +109,9 @@ export async function generatePDF(certificateData: CertificateData): Promise<Buf
     });
     
     // 3. Texto "Cumpliendo todos los requisitos exigidos."
-    // Posición: x=1.06cm (30pts), y=14.41cm desde arriba
-    // Convertir: 14.41cm = 408pts desde arriba → 595 - 408 = 187pts
-    const line2Y = 187; // 14.41cm desde arriba
-    firstPage.drawText("Cumpliendo todos los requisitos exigidos.", {
+    // 3. Texto "Cumpliendo todos los requisitos exigidos."
+    // Posición: x=1.06cm, y=14.41cm desde arriba
+    const line2Y = height - cmToPts(14.41);quisitos exigidos.", {
       x: xText,
       y: line2Y,
       size: textFontSize,
@@ -113,18 +120,21 @@ export async function generatePDF(certificateData: CertificateData): Promise<Buf
     });
     
     // 4. Nombre del DOCENTE
-    // Posición: x=12.93cm (366pts), y=18.9cm desde arriba
-    // Convertir: 12.93cm = 366pts, 18.9cm = 535pts desde arriba → 595 - 535 = 60pts
-    const instructorFontSize = 14;
+    // 4. Nombre del DOCENTE
+    // Posición: x=11.72cm, y=18.67cm desde arriba
+    // Tamaño de letra: 11
+    const instructorFontSize = 11;
     const instructorText = certificateData.instructorName;
+    const instructorX = cmToPts(11.72);
+    const instructorY = height - cmToPts(18.67);
+    
     firstPage.drawText(instructorText, {
-      x: 366, // 12.93cm
-      y: 60, // 18.9cm desde arriba
+      x: instructorX,
+      y: instructorY,
       size: instructorFontSize,
       font: fontRegular,
       color: blueColor,
     });
-    
     // 4. Insertar QR Code (abajo derecha, donde ya está marcado)
     const qrSize = 80;
     firstPage.drawImage(qrImage, {

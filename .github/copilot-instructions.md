@@ -144,18 +144,40 @@ No duration/passing score columns - duration is generic text, passing score hard
 No duration/passing score columns - duration is generic text, passing score hardcoded to 70.
 
 ## PDF Coordinate System & Design Workflow
-`certificateTemplate.pdf` is A4 landscape (842x595 pts). Origin is bottom-left. 
+`certificateTemplate.pdf` dimensions vary. Origin is bottom-left. **Measurements in CM converted to points (1cm = 28.35pts)**.
 
 **Design Process**:
 1. Create certificate design in Canva/Figma (leave space for dynamic text)
 2. Export as PDF → save as `lib/certificateTemplate.pdf`
 3. Adjust coordinates in `lib/generatePDF.ts` to match layout
 
-**Current overlays** (from `generatePDF.ts`):
-- **Course name**: x=450, y=330, size=36pt, HelveticaBold, blue (#3B82F6) [right of rocket emoji]
-- **Student name**: centered, y=250, size=28pt, HelveticaBold, uppercase, blue
-- **Instructor name**: x=575, y=105, size=18pt, Helvetica, blue [below "Docente" label]
-- **QR code**: x=742, y=70, 80x80 pts [bottom-right corner]
+**EXACT SPECIFICATIONS** (from `generatePDF.ts`):
+
+**Color**: #4285F4 (azul corporativo) - applies to ALL text
+
+**Line 1**: "Desde ITSCHOOL certificamos que [STUDENT NAME IN BOLD] ha finalizado y aprobado el curso."
+- Position: x=1.06cm, y=13.25cm (from top)
+- Size: 14pt
+- Font: Helvetica (regular), student name in HelveticaBold
+
+**Line 2**: "Cumpliendo todos los requisitos exigidos."
+- Position: x=1.06cm, y=14.41cm (from top)
+- Size: 14pt, Helvetica
+
+**Course Title**:
+- Position: x=1.06cm, y=8.54cm (from top)
+- Size: 14pt, HelveticaBold
+- **MAX dimensions**: Width 15.78cm, Height 3.93cm
+- Width may vary for long titles (e.g., "Optimización de procesos con herramientas de IA")
+
+**Instructor Name**:
+- Position: x=11.72cm, y=18.67cm (from top)
+- Size: 11pt, Helvetica
+- Note: "Docente" label is part of template image
+
+**QR Code**:
+- Position: x=742pts, y=70pts (bottom-right corner)
+- Size: 80x80pts
 
 **Font limitation**: pdf-lib only supports standard PDF fonts (Helvetica, Times, Courier). Canva designs with Poppins/custom fonts approximate to HelveticaBold.
 
