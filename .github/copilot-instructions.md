@@ -151,35 +151,47 @@ No duration/passing score columns - duration is generic text, passing score hard
 2. Export as PDF → save as `lib/certificateTemplate.pdf`
 3. Adjust coordinates in `lib/generatePDF.ts` to match layout
 
-**EXACT SPECIFICATIONS** (from `generatePDF.ts`):
+**EXACT SPECIFICATIONS** (Updated Nov 2025 - Final):
 
-**Color**: #4285F4 (azul corporativo) - applies to ALL text
+**Color**: #4285F4 (azul corporativo) - applies to ALL certificate text
+
+**Course Title**:
+- Position: x=1.07cm, y=9.64cm (from top)
+- Size: 39pt, HelveticaBold
+- Line height: 1.2 (interlineado)
+- **MAX width**: 20.78cm
+- Multi-line support: Text wraps automatically if exceeds max width
+
+**Rocket Icon** (🚀 rocket-icon.png):
+- Position: Dynamic - calculated as 1cm to the right of the longest line in the title
+- Size: 35x35pts
+- Logic: 
+  - Single line: Aligned with title baseline
+  - Multiple lines: Vertically centered in the middle of all lines
+- File: `lib/rocket-icon.png` (PNG with transparent background)
 
 **Line 1**: "Desde ITSCHOOL certificamos que [STUDENT NAME IN BOLD] ha finalizado y aprobado el curso."
-- Position: x=1.06cm, y=13.25cm (from top)
+- Position: x=1.07cm, y=12.5cm (from top)
 - Size: 14pt
 - Font: Helvetica (regular), student name in HelveticaBold
 
 **Line 2**: "Cumpliendo todos los requisitos exigidos."
-- Position: x=1.06cm, y=14.41cm (from top)
+- Position: x=1.07cm, y=13.59cm (from top)
 - Size: 14pt, Helvetica
 
-**Course Title**:
-- Position: x=1.06cm, y=8.54cm (from top)
-- Size: 14pt, HelveticaBold
-- **MAX dimensions**: Width 15.78cm, Height 3.93cm
-- Width may vary for long titles (e.g., "Optimización de procesos con herramientas de IA")
-
-**Instructor Name**:
-- Position: x=11.72cm, y=18.67cm (from top)
-- Size: 11pt, Helvetica
-- Note: "Docente" label is part of template image
+**Instructor Section** (two lines, both centered):
+- Line 1 "Docente": x=14.06cm (centered), y=18.65cm (from top), 11pt
+- Line 2 (Instructor name): x=14.06cm (centered), y=19.25cm (from top), 11pt
+- Both lines use same center point for alignment
 
 **QR Code**:
-- Position: x=742pts, y=70pts (bottom-right corner)
+- Position: x=width-qrSize-80pts (dynamic, right side), y=70pts (bottom-right corner)
 - Size: 80x80pts
+- Color: #4285F4 (azul corporativo, matching text color)
 
 **Font limitation**: pdf-lib only supports standard PDF fonts (Helvetica, Times, Courier). Canva designs with Poppins/custom fonts approximate to HelveticaBold.
+
+**Template dimensions**: 842.25 x 595.5 pts (A4 landscape)
 
 ## User-Facing Error Messages
 
@@ -237,17 +249,34 @@ Validation errors in `/api/validate` should return user-friendly Spanish message
 - **Testing branch**: `testing` or `dev` → separate Netlify site for testing changes
 - Netlify supports **branch deploys**: configure in Site settings → Build & deploy → Branch deploys
 
-**Current test course**: Course ID `12112663` ("Optimizaciones de Procesos y Herramientas IA")
-
-### Testing vs Production Workflow
-
-**Desired setup** (to be configured):
-- **Production branch**: `main` → deploys to certificados.itschool.com.ar (shows placeholder homepage)
-- **Testing branch**: `testing` or `dev` → separate Netlify site for testing changes
-- Netlify supports **branch deploys**: configure in Site settings → Build & deploy → Branch deploys
-
-**Current test course**: Course ID `12112663` ("Optimizaciones de Procesos y Herramientas IA")
+**Current test course**: Course ID `12112663` ("Optimización de procesos con herramientas de IA")
+- Test email: morena.caparros@grupokelsoft.com
+- Instructor: Morena Caparrós
 - **No fixed IP address**: Netlify Functions run on AWS Lambda with rotating IPs. Cannot whitelist for Canvas API.
+
+## ITSCHOOL Brand Colors
+
+Use these colors throughout the application (UI, validation page, error messages):
+
+**Primary Colors (from logo)**:
+| Usage | Color | Hex Code | Description |
+|-------|-------|----------|-------------|
+| **Primary (Brand)** | Celeste | `#4285F4` | Main brand color. Use for buttons, headings, links, important UI elements. |
+| **Secondary (Brand)** | Azul | `#393185` | Secondary brand color. Use for gradients, alternate buttons, dark accents. |
+| **Contrast (Dark Text)** | Gris Oscuro/Negro Suave | `#1A1A1A` | Primary text on light backgrounds. |
+| **Base (Light Background)** | Blanco Puro | `#FFFFFF` | Main background color for certificates and UI. |
+| **Text/Secondary Details** | Gris Neutro | `#666666` | Secondary text, hints, dates, instructor names, dividing lines. |
+
+**Accent Colors (less prominent)**:
+- Yellow: `#FABB05` - Warnings or highlights
+- Red: `#E94235` - Errors or important warnings
+- Green: `#34A853` - Success states or confirmations
+
+**Certificate text color**: Uses `#4285F4` (Celeste) for all certificate text overlays, matching the primary brand color.
+
+**Assets**: 
+- ITSCHOOL logo: `Logo Original a color.svg` (use in validation page and UI)
+- Rocket icon: `lib/rocket-icon.png` (35x35pts, transparent background)
 
 ## Recent Architectural Decisions (Nov 2025)
 
