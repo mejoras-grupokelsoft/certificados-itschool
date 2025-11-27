@@ -2,23 +2,66 @@
 
 export default function HomePage() {
   return (
-    <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-white to-purple-50">
+    <div className="min-h-screen bg-white">
       <div className="container mx-auto px-4 py-12">
-        <div className="text-center mb-16">
-          <h1 className="text-6xl font-bold text-indigo-600 mb-4">IT SCHOOL</h1>
-          <p className="text-gray-600 text-xl">Instituto de Tecnología y Desarrollo de Software</p>
-          <p className="text-sm text-indigo-500 mt-2">[TESTING BRANCH]</p>
+        {/* Header con Logo */}
+        <div className="flex justify-center mb-16">
+          <img 
+            src="/Logo Original a color.svg" 
+            alt="ITSCHOOL Logo" 
+            className="h-24 w-auto"
+          />
         </div>
+
+        {/* Testing Branch Badge */}
+        <div className="text-center mb-8">
+          <span className="inline-block px-4 py-2 rounded-full text-sm font-semibold" style={{ backgroundColor: '#FABB05', color: '#1A1A1A' }}>
+            [TESTING BRANCH]
+          </span>
+        </div>
+
+        {/* Main Content */}
         <div className="max-w-4xl mx-auto">
           <div className="bg-white rounded-2xl shadow-xl p-12 mb-8">
-            <h2 className="text-4xl font-bold text-gray-900 mb-6 text-center">Sistema de Certificados</h2>
-            <p className="text-gray-600 text-lg text-center mb-12">Obtén tu certificado digital verificable al completar nuestros cursos</p>
-            <div className="bg-gradient-to-r from-indigo-50 to-purple-50 rounded-xl p-8 text-center">
-              <h3 className="font-bold text-gray-900 text-xl mb-4">¿Completaste un curso?</h3>
-              <p className="text-gray-600 mb-6">Ingresa el ID de tu curso para generar tu certificado</p>
-              <Link href="/curso/123456" className="inline-block bg-indigo-600 text-white px-8 py-4 rounded-lg font-semibold text-lg hover:bg-indigo-700 transition-colors">Generar Certificado (Ejemplo)</Link>
+            <h2 className="text-4xl font-bold mb-6 text-center" style={{ color: '#1A1A1A' }}>
+              Sistema de Certificados
+            </h2>
+            <p className="text-lg text-center mb-12" style={{ color: '#666666' }}>
+              Obtené tu certificado digital verificable al completar nuestros cursos
+            </p>
+
+            <div className="rounded-xl p-8 text-center" style={{ background: 'linear-gradient(135deg, #4285F4 0%, #393185 100%)' }}>
+              <h3 className="font-bold text-white text-xl mb-4">
+                ¿Completaste un curso?
+              </h3>
+              <p className="text-white/90 mb-6">
+                Ingresá el ID de tu curso para generar tu certificado
+              </p>
+              <Link 
+                href="/curso/12112663" 
+                className="inline-block text-white px-8 py-4 rounded-lg font-semibold text-lg hover:opacity-90 transition-opacity"
+                style={{ backgroundColor: '#34A853' }}
+              >
+                Generar Certificado (Ejemplo)
+              </Link>
             </div>
           </div>
+        </div>
+
+        {/* Footer */}
+        <div className="text-center mt-12" style={{ color: '#666666' }}>
+          <p className="text-sm">
+            Si querés saber más de nosotros o ver más cursos, consultá nuestra página:{' '}
+            <a 
+              href="https://www.itschool.com.ar" 
+              target="_blank" 
+              rel="noopener noreferrer" 
+              className="hover:underline" 
+              style={{ color: '#4285F4' }}
+            >
+              www.itschool.com.ar
+            </a>
+          </p>
         </div>
       </div>
     </div>
