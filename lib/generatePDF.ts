@@ -9,9 +9,10 @@ export async function generatePDF(certificateData: CertificateData): Promise<Buf
     console.log(' Iniciando generación de PDF con pdf-lib...');
     
     // Leer el PDF template
-    console.log(' Leyendo template PDF...');
+    console.log('📄 Leyendo template PDF...');
     const templatePath = join(process.cwd(), 'lib', 'certificateTemplate.pdf');
     const existingPdfBytes = readFileSync(templatePath);
+    console.log('📄 Template size:', existingPdfBytes.length, 'bytes');
     
     // Cargar el PDF
     const pdfDoc = await PDFDocument.load(existingPdfBytes);
