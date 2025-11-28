@@ -58,14 +58,14 @@ export async function generatePDF(certificateData: CertificateData): Promise<Buf
     const cmToPts = (cm: number) => cm * 28.35;
     
     // 1. TÍTULO DEL CURSO
-    // Posición: x=1.07cm, y=9.64cm (desde arriba) - 2cm más abajo
-    // Tamaño máximo: ancho 20.78cm, alto 3.93cm
+    // Posición: x=2cm, y=6cm (desde arriba)
+    // Tamaño máximo: ancho 18cm
     // Convertir y desde arriba a coordenadas de PDF: height - y_cm_en_pts
-    const courseFontSize = 39;
+    const courseFontSize = 32;
     const courseText = certificateData.courseName;
-    const courseX = cmToPts(1.07);
-    const courseY = height - cmToPts(9.64);
-    const courseMaxWidth = cmToPts(20.78); // Ancho máximo 20.78cm (18.78 + 2)
+    const courseX = cmToPts(2);
+    const courseY = height - cmToPts(6);
+    const courseMaxWidth = cmToPts(18);
     const courseLineHeight = courseFontSize * 1.2;
     
     // Calcular líneas del título para posicionar la nave dinámicamente
@@ -108,8 +108,8 @@ export async function generatePDF(certificateData: CertificateData): Promise<Buf
     }
     
     // Posicionar nave 1cm después del borde derecho del "rectángulo" del título
-    const rocketSize = 35; // Tamaño del ícono en puntos
-    const rocketX = courseX + maxLineWidth + cmToPts(1); // 1cm después de la línea más larga
+    const rocketSize = 30; // Tamaño del ícono en puntos
+    const rocketX = courseX + maxLineWidth + cmToPts(0.5); // 0.5cm después de la línea más larga
     
     if (lines.length === 1) {
       // Una sola línea: nave alineada con la línea
@@ -135,10 +135,10 @@ export async function generatePDF(certificateData: CertificateData): Promise<Buf
     }
     
     // 2. Texto "Desde ITSCHOOL certificamos que [NOMBRE] ha finalizado y aprobado el curso."
-    // Posición: x=1.07cm, y=12.5cm desde arriba (2cm más abajo)
-    const textFontSize = 14;
-    const xText = cmToPts(1.07);
-    const line1Y = height - cmToPts(12.5);
+    // Posición: x=2cm, y=9.5cm desde arriba
+    const textFontSize = 12;
+    const xText = cmToPts(2);
+    const line1Y = height - cmToPts(9.5);
     
     const beforeName = "Desde ITSCHOOL certificamos que ";
     const studentName = certificateData.studentName;
@@ -174,8 +174,8 @@ export async function generatePDF(certificateData: CertificateData): Promise<Buf
     });
     
     // 3. Texto "Cumpliendo todos los requisitos exigidos."
-    // Posición: x=1.07cm, y=13.59cm desde arriba (2cm más abajo)
-    const line2Y = height - cmToPts(13.59);
+    // Posición: x=2cm, y=10.5cm desde arriba
+    const line2Y = height - cmToPts(10.5);
     firstPage.drawText("Cumpliendo todos los requisitos exigidos.", {
       x: xText,
       y: line2Y,
@@ -185,17 +185,17 @@ export async function generatePDF(certificateData: CertificateData): Promise<Buf
     });
     
     // 4. Nombre del DOCENTE (dos líneas: "Docente" + nombre)
-    // "Docente" centrado en x=14.06cm, y=18.65cm
-    // Nombre del docente centrado en x=12.01cm, y=19.25cm
-    // Tamaño de letra: 11
-    const instructorFontSize = 11;
+    // "Docente" centrado en x=14.85cm (mitad de 29.7cm), y=16cm desde arriba
+    // Nombre del docente centrado igual, y=16.8cm desde arriba
+    // Tamaño de letra: 10
+    const instructorFontSize = 10;
     
     // Línea 1: "Docente" - centrado en la mitad del certificado
     const docenteText = "Docente";
     const docenteWidth = fontRegular.widthOfTextAtSize(docenteText, instructorFontSize);
-    const docenteXCenter = cmToPts(14.06);
+    const docenteXCenter = cmToPts(14.85); // Mitad del certificado A4 landscape
     const docenteX = docenteXCenter - (docenteWidth / 2); // Centrar el texto
-    const docenteY = height - cmToPts(18.65);
+    const docenteY = height - cmToPts(16);
     
     firstPage.drawText(docenteText, {
       x: docenteX,
@@ -205,12 +205,12 @@ export async function generatePDF(certificateData: CertificateData): Promise<Buf
       color: blueColor,
     });
     
-    // Línea 2: Nombre del docente - centrado igual que "Docente" (en x=14.06cm)
+    // Línea 2: Nombre del docente - centrado igual que "Docente"
     const instructorText = certificateData.instructorName;
     const instructorTextWidth = fontRegular.widthOfTextAtSize(instructorText, instructorFontSize);
-    const instructorXCenter = cmToPts(14.06); // Mismo centro que "Docente"
+    const instructorXCenter = cmToPts(14.85); // Mismo centro que "Docente"
     const instructorX = instructorXCenter - (instructorTextWidth / 2); // Centrar el texto
-    const instructorY = height - cmToPts(19.25);
+    const instructorY = height - cmToPts(16.8);
     
     firstPage.drawText(instructorText, {
       x: instructorX,
@@ -219,11 +219,11 @@ export async function generatePDF(certificateData: CertificateData): Promise<Buf
       font: fontRegular,
       color: blueColor,
     });
-    // 4. Insertar QR Code (abajo derecha, donde ya está marcado)
-    const qrSize = 80;
+    // 5. Insertar QR Code (abajo derecha)
+    const qrSize = 70;
     firstPage.drawImage(qrImage, {
-      x: width - qrSize - 80, // Más a la derecha
-      y: 70,
+      x: width - qrSize - 50,
+      y: 50,
       width: qrSize,
       height: qrSize,
     });
