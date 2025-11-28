@@ -6,10 +6,10 @@ import type { CertificateData } from './types';
 
 export async function generatePDF(certificateData: CertificateData): Promise<Buffer> {
   try {
-    console.log(' Iniciando generación de PDF con pdf-lib...');
+    console.log('🚀 [v2.0] Iniciando generación de PDF con pdf-lib...');
     
     // Leer el PDF template
-    console.log('📄 Leyendo template PDF V2...');
+    console.log('📄 [v2.0] Leyendo template PDF V2...');
     const templatePath = join(process.cwd(), 'lib', 'certificateTemplateV2.pdf');
     const existingPdfBytes = readFileSync(templatePath);
     console.log('📄 Template V2 size:', existingPdfBytes.length, 'bytes');
