@@ -6,11 +6,18 @@ import type { CertificateData } from './types';
 
 export async function generatePDF(certificateData: CertificateData): Promise<Buffer> {
   try {
-    console.log('🚀🚀🚀 [NUEVO ARCHIVO pdfGenerator.ts] Iniciando generación...');
-    
+    const DEPLOY_VERSION = 'v3.0-logs-2025-11-28';
+    console.log(`🚀🚀🚀 [${DEPLOY_VERSION}] Iniciando generación de PDF (pdfGenerator)...`);
+    console.log('📄 [DETAILS] Certificate data summary:', JSON.stringify({
+      token: certificateData.token?.slice(0,10) + '...',
+      studentName: certificateData.studentName,
+      courseName: certificateData.courseName,
+    }));
+
     // Leer el PDF template
     console.log('📄 [NUEVO] Leyendo certificateTemplateV2.pdf...');
     const templatePath = join(process.cwd(), 'lib', 'certificateTemplateV2.pdf');
+    console.log('📄 [NUEVO] Template path:', templatePath);
     const existingPdfBytes = readFileSync(templatePath);
     console.log('📄 Template V2 size:', existingPdfBytes.length, 'bytes');
     
@@ -28,22 +35,23 @@ export async function generatePDF(certificateData: CertificateData): Promise<Buf
     
     // Generar QR Code
     console.log('📄 Generando QR code...');
-    const qrCodeDataUrl = await QRCode.toDataURL(certificateData.validationUrl, {
-      width: 300,
-      margin: 1,
-      color: { dark: '#4285F4', light: '#FFFFFF' },
-    });
-    
+    const qrOptions = { width: 300, margin: 1, color: { dark: '#4285F4', light: '#FFFFFF' } };
+    console.log('📄 QR options:', JSON.stringify(qrOptions));
+    const qrCodeDataUrl = await QRCode.toDataURL(certificateData.validationUrl, qrOptions);
+
     // Convertir QR de data URL a PNG bytes
     const qrBase64 = qrCodeDataUrl.split(',')[1];
     const qrBytes = Buffer.from(qrBase64, 'base64');
+    console.log('📄 QR bytes length:', qrBytes.length);
     const qrImage = await pdfDoc.embedPng(qrBytes);
     console.log('✅ QR code generado');
     
     // Cargar ícono de cohete
     console.log('📄 Cargando ícono de cohete...');
     const rocketPath = join(process.cwd(), 'lib', 'rocket-icon.png');
+    console.log('📄 Rocket icon path:', rocketPath);
     const rocketBytes = readFileSync(rocketPath);
+    console.log('📄 Rocket bytes length:', rocketBytes.length);
     const rocketIcon = await pdfDoc.embedPng(rocketBytes);
     console.log('✅ Ícono de cohete cargado');
     
@@ -67,6 +75,7 @@ export async function generatePDF(certificateData: CertificateData): Promise<Buf
     const courseY = height - cmToPts(9.64);
     const courseMaxWidth = cmToPts(20.78);
     const courseLineHeight = courseFontSize * 1.2;
+    console.log('📐 Course layout metrics:', { courseX, courseY, courseMaxWidth, courseFontSize, courseLineHeight });
     
     // Calcular líneas del título para posicionar la nave dinámicamente
     const words = courseText.split(' ');
@@ -108,9 +117,11 @@ export async function generatePDF(certificateData: CertificateData): Promise<Buf
     
     const rocketSize = 35;
     const rocketX = courseX + maxLineWidth + cmToPts(1);
-    
+    console.log('🚀 Calculated rocket position:', { rocketX, maxLineWidth, rocketSize, linesCount: lines.length });
+
     if (lines.length === 1) {
       const rocketY = courseY;
+      console.log('🚀 Rocket will be drawn at single-line Y:', rocketY);
       firstPage.drawImage(rocketIcon, {
         x: rocketX,
         y: rocketY,
@@ -120,6 +131,7 @@ export async function generatePDF(certificateData: CertificateData): Promise<Buf
     } else {
       const totalHeight = (lines.length - 1) * courseLineHeight;
       const rocketY = courseY - (totalHeight / 2);
+      console.log('🚀 Rocket will be drawn at multi-line Y:', rocketY, 'totalHeight:', totalHeight);
       firstPage.drawImage(rocketIcon, {
         x: rocketX,
         y: rocketY,
@@ -206,9 +218,12 @@ export async function generatePDF(certificateData: CertificateData): Promise<Buf
     
     // 5. Insertar QR Code (abajo derecha)
     const qrSize = 80;
+    const qrX = width - qrSize - 80;
+    const qrY = 70;
+    console.log('📐 QR position:', { qrX, qrY, qrSize });
     firstPage.drawImage(qrImage, {
-      x: width - qrSize - 80,
-      y: 70,
+      x: qrX,
+      y: qrY,
       width: qrSize,
       height: qrSize,
     });
@@ -218,7 +233,8 @@ export async function generatePDF(certificateData: CertificateData): Promise<Buf
     // Serializar PDF
     const pdfBytes = await pdfDoc.save();
     console.log(' PDF generado, tamaño:', pdfBytes.length, 'bytes');
-    
+    console.log(`🚀🚀🚀 [${DEPLOY_VERSION}] PDF generado para token: ${certificateData.token?.slice(0,10)}...`);
+
     return Buffer.from(pdfBytes);
   } catch (error) {
     console.error(' Error en generatePDF:', error);

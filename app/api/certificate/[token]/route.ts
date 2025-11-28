@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getCertificate } from '@/lib/certificateStorage';
 import { generatePDF } from '@/lib/pdfGenerator';
 
+const DEPLOY_VERSION = 'v3.0-logs-2025-11-28';
+
 /**
  * API Route: GET /api/certificate/[token]
  * 
@@ -25,16 +27,16 @@ export async function GET(
       );
     }
 
-    console.log('📄 Generando PDF para:', {
+    console.log(`🚀 [${DEPLOY_VERSION}] 📄 Generando PDF para:`, {
       student: certificateData.studentName,
       course: certificateData.courseName,
       token: token.substring(0, 10) + '...'
     });
 
     // Generar PDF
+    console.log(`🚀 [${DEPLOY_VERSION}] Llamando a generatePDF()`);
     const pdfBuffer = await generatePDF(certificateData);
-    
-    console.log('✅ PDF generado exitosamente, tamaño:', pdfBuffer.length, 'bytes');
+    console.log(`✅ [${DEPLOY_VERSION}] PDF generado exitosamente, tamaño:`, pdfBuffer.length, 'bytes');
 
     // Normalizar nombre del estudiante
     const studentNameSafe = (certificateData.studentName || 'estudiante')
