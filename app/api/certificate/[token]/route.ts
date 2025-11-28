@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getCertificate } from '@/lib/certificateStorage';
-import { generatePDF } from '@/lib/generatePDF';
+import { generatePDF } from '@/lib/pdfGenerator';
 
 /**
  * API Route: GET /api/certificate/[token]
