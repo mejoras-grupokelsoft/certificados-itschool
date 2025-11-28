@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { saveCertificate } from '@/lib/certificateStorage';
+import { saveCertificate, generateCertificateToken, getCertificate } from '@/lib/certificateStorage';
 import type { CertificateData, CertificateResponse } from '@/lib/types';
-import crypto from 'crypto';
 
 const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000';
 
@@ -9,6 +8,7 @@ const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000';
  * API Route: POST /api/certificate
  * 
  * Genera y guarda un nuevo certificado después de validar al estudiante
+ * El token es determinístico: mismo estudiante + curso = mismo token (idempotente)
  */
 export async function POST(request: NextRequest) {
   try {
@@ -22,10 +22,28 @@ export async function POST(request: NextRequest) {
       score 
     } = body;
 
-    console.log('📜 Generando certificado para:', { studentName, courseId });
+    console.log('📜 Generando certificado para:', { studentName, studentEmail, courseId });
 
-    // Generar token único
-    const token = crypto.randomBytes(32).toString('hex');
+    // Generar token determinístico basado en email + courseId
+    const token = generateCertificateToken(studentEmail, courseId);
+    console.log('🔑 Token generado:', token);
+    
+    // Verificar si ya existe un certificado para este estudiante + curso
+    const existingCertificate = await getCertificate(token);
+    if (existingCertificate) {
+      console.log('✅ Certificado ya existe, reutilizando token:', token);
+      return NextResponse.json(
+        {
+          success: true,
+          message: 'Certificado ya generado previamente',
+          certificateUrl: `${BASE_URL}/api/certificate/${token}`,
+          token,
+          validationUrl: existingCertificate.validationUrl,
+          existing: true,
+        } as CertificateResponse,
+        { status: 200 }
+      );
+    }
 
     // Crear datos del certificado
     const certificateData: CertificateData = {

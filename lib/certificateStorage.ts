@@ -1,5 +1,5 @@
 import { Redis } from '@upstash/redis';
-import { randomBytes } from 'crypto';
+import { createHash } from 'crypto';
 import type { CertificateData } from './types';
 
 // Configurar cliente de Redis con Upstash
@@ -7,10 +7,13 @@ import type { CertificateData } from './types';
 const redis = Redis.fromEnv();
 
 /**
- * Genera un token único para el certificado
+ * Genera un token único y determinístico para el certificado
+ * Mismo estudiante + curso = mismo token (idempotente)
+ * Usa SHA-256 hash de: studentEmail + courseId
  */
-export function generateCertificateToken(): string {
-  return randomBytes(32).toString('hex');
+export function generateCertificateToken(studentEmail: string, courseId: string): string {
+  const data = `${studentEmail.toLowerCase().trim()}:${courseId.trim()}`;
+  return createHash('sha256').update(data).digest('hex');
 }
 
 /**
