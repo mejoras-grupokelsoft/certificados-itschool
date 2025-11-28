@@ -3,18 +3,17 @@
   command = "npm run build"
   publish = ".next"
 
-  [functions]
-  directory = ".netlify/functions"
-
 [functions]
   directory = ".netlify/functions"
 
 [[plugins]]
   package = "@netlify/plugin-nextjs"
 
-  # For testing branch: remove cached functions before build to avoid stale Lambda bundles
+# For testing branch: remove cached functions before build to avoid stale Lambda bundles
+[context]
   [context.testing]
-  command = "rm -rf .netlify/functions && npm run build"
+    # Clear any existing compiled functions then run the normal build
+    command = "rm -rf .netlify/functions && npm run build"
 
     [[context.testing.headers]]
     for = "/_next/static/*"
