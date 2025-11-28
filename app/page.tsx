@@ -35,14 +35,14 @@ export default function HomePage() {
                 ¿Completaste un curso?
               </h3>
               <p className="text-white/90 mb-6">
-                Ingresá el ID de tu curso para generar tu certificado
+                Elegí tu curso y generá tu certificado oficial
               </p>
               <Link 
-                href="/curso/12112663" 
+                href="/cursos" 
                 className="inline-block text-white px-8 py-4 rounded-lg font-semibold text-lg hover:opacity-90 transition-opacity"
                 style={{ backgroundColor: '#34A853' }}
               >
-                Generar Certificado (Ejemplo)
+                Ver Cursos Disponibles
               </Link>
             </div>
           </div>
