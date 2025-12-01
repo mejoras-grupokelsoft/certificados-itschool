@@ -4,12 +4,26 @@ import type { CertificateData, CertificateResponse } from '@/lib/types';
 
 // Detectar la URL base correcta según el entorno
 const getBaseUrl = () => {
-  // En Netlify, usar DEPLOY_URL (incluye testing--, branch deploys, etc)
-  if (process.env.DEPLOY_URL) {
-    return process.env.DEPLOY_URL;
-  }
-  // Fallback a NEXT_PUBLIC_BASE_URL o localhost
-  return process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000';
+  // Netlify provee múltiples variables de entorno para URLs
+  const deployUrl = process.env.DEPLOY_URL;           // URL completa del deploy (incluye testing--)
+  const url = process.env.URL;                        // URL principal del sitio
+  const netlifyUrl = process.env.NETLIFY_URL;         // Otra URL de Netlify
+  const context = process.env.CONTEXT;                // branch-deploy, deploy-preview, production
+  
+  console.log('🌐 Environment URLs:', {
+    DEPLOY_URL: deployUrl,
+    URL: url,
+    NETLIFY_URL: netlifyUrl,
+    CONTEXT: context,
+    NEXT_PUBLIC_BASE_URL: process.env.NEXT_PUBLIC_BASE_URL,
+  });
+  
+  // Prioridad: DEPLOY_URL > URL > NEXT_PUBLIC_BASE_URL > localhost
+  const baseUrl = deployUrl || url || process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000';
+  
+  console.log('✅ Using BASE_URL:', baseUrl);
+  
+  return baseUrl;
 };
 
 const BASE_URL = getBaseUrl();
