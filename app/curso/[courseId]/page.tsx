@@ -24,12 +24,20 @@ export default function CursoPage() {
   const [validationUrl, setValidationUrl] = useState<string | null>(null);
   const [downloadingPdf, setDownloadingPdf] = useState(false);
 
-  const handleDownloadPdf = async () => {
+  const handleDownloadPdf = async (e?: React.MouseEvent) => {
+    // Prevenir navegación del navegador
+    if (e) {
+      e.preventDefault();
+      e.stopPropagation();
+    }
+    
     if (!certificateUrl) return;
     
     setDownloadingPdf(true);
     try {
-      const response = await fetch(certificateUrl);
+      // Agregar timestamp para evitar caché
+      const downloadUrl = `${certificateUrl}?download=true&t=${Date.now()}`;
+      const response = await fetch(downloadUrl);
       
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
@@ -46,6 +54,7 @@ export default function CursoPage() {
       const a = document.createElement('a');
       a.href = url;
       a.download = `Certificado-${fullName.replace(/\s+/g, '-')}.pdf`;
+      a.style.display = 'none';
       document.body.appendChild(a);
       a.click();
       
@@ -294,7 +303,8 @@ export default function CursoPage() {
 
                 <div className="space-y-4">
                   <button
-                    onClick={handleDownloadPdf}
+                    type="button"
+                    onClick={(e) => handleDownloadPdf(e)}
                     disabled={downloadingPdf}
                     className="block w-full text-white text-center px-6 py-4 rounded-lg font-semibold text-lg hover:opacity-90 transition-opacity disabled:opacity-50 disabled:cursor-not-allowed"
                     style={{ backgroundColor: '#5C00D6' }}
