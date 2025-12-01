@@ -30,18 +30,34 @@ export default function CursoPage() {
     setDownloadingPdf(true);
     try {
       const response = await fetch(certificateUrl);
+      
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      
       const blob = await response.blob();
+      
+      // Verificar que sea un PDF
+      if (!blob.type.includes('pdf')) {
+        console.warn('Response is not a PDF:', blob.type);
+      }
+      
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
       a.download = `Certificado-${fullName.replace(/\s+/g, '-')}.pdf`;
       document.body.appendChild(a);
       a.click();
-      window.URL.revokeObjectURL(url);
-      document.body.removeChild(a);
+      
+      // Cleanup después de un pequeño delay
+      setTimeout(() => {
+        window.URL.revokeObjectURL(url);
+        document.body.removeChild(a);
+      }, 100);
     } catch (error) {
       console.error('Error downloading PDF:', error);
-      alert('Error al descargar el PDF. Intente nuevamente.');
+      // Fallback: abrir en nueva pestaña si fetch falla
+      window.open(certificateUrl, '_blank');
     } finally {
       setDownloadingPdf(false);
     }
