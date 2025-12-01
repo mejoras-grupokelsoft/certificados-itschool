@@ -2,6 +2,10 @@ import { Redis } from '@upstash/redis';
 import { createHash } from 'crypto';
 import type { CertificateData } from './types';
 
+const BUILD_ID = `certificateStorage-${new Date().toISOString()}-${Date.now()}`;
+const BUILD_TIMESTAMP = Date.now();
+console.log(`📦 certificateStorage loaded - BUILD_ID: ${BUILD_ID}, TIMESTAMP: ${BUILD_TIMESTAMP}`);
+
 // Configurar cliente de Redis con Upstash
 // Usa las variables de entorno UPSTASH_REDIS_REST_URL y UPSTASH_REDIS_REST_TOKEN
 const redis = Redis.fromEnv();

@@ -4,6 +4,8 @@ import type { CertificateData, CertificateResponse } from '@/lib/types';
 
 const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000';
 const BUILD_VERSION = 'v4.0-force-rebuild-2025-12-01';
+const BUILD_ID = `certificate-route-${new Date().toISOString()}-${Date.now()}`;
+const BUILD_TIMESTAMP = Date.now();
 
 /**
  * API Route: POST /api/certificate
@@ -13,7 +15,8 @@ const BUILD_VERSION = 'v4.0-force-rebuild-2025-12-01';
  */
 export async function POST(request: NextRequest) {
   try {
-    console.log(`🚀🚀🚀 [${BUILD_VERSION}] Certificate creation endpoint called`);
+    console.log(`🚀🚀🚀 [${BUILD_VERSION}] [BUILD_ID: ${BUILD_ID}] [TIMESTAMP: ${BUILD_TIMESTAMP}] Certificate creation endpoint called`);
+    console.log(`📍 Environment: NODE_ENV=${process.env.NODE_ENV}, CONTEXT=${process.env.CONTEXT}, CWD=${process.cwd()}`);
     const body = await request.json();
     const { 
       studentName, 

@@ -4,10 +4,13 @@ import { readFileSync } from 'fs';
 import { join } from 'path';
 import type { CertificateData } from './types';
 
+const BUILD_ID = `pdfGenerator-${new Date().toISOString()}-${Date.now()}`;
+const BUILD_TIMESTAMP = Date.now();
+
 export async function generatePDF(certificateData: CertificateData): Promise<Buffer> {
   try {
     const DEPLOY_VERSION = 'v3.0-logs-2025-11-28';
-    console.log(`🚀🚀🚀 [${DEPLOY_VERSION}] Iniciando generación de PDF (pdfGenerator)...`);
+    console.log(`🚀🚀🚀 [${DEPLOY_VERSION}] [BUILD_ID: ${BUILD_ID}] [TIMESTAMP: ${BUILD_TIMESTAMP}] Iniciando generación de PDF (pdfGenerator)...`);
     console.log('📄 [DETAILS] Certificate data summary:', JSON.stringify({
       token: certificateData.token?.slice(0,10) + '...',
       studentName: certificateData.studentName,

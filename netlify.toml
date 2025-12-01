@@ -5,6 +5,8 @@
 
 [functions]
   directory = ".netlify/functions"
+  # Include PDFs and static assets in function bundles
+  included_files = ["lib/**/*.pdf"]
 
 [[plugins]]
   package = "@netlify/plugin-nextjs"
