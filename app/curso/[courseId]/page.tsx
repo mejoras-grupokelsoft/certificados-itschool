@@ -22,6 +22,30 @@ export default function CursoPage() {
   const [step, setStep] = useState<'form' | 'validating' | 'generating' | 'success'>('form');
   const [certificateUrl, setCertificateUrl] = useState<string | null>(null);
   const [validationUrl, setValidationUrl] = useState<string | null>(null);
+  const [downloadingPdf, setDownloadingPdf] = useState(false);
+
+  const handleDownloadPdf = async () => {
+    if (!certificateUrl) return;
+    
+    setDownloadingPdf(true);
+    try {
+      const response = await fetch(certificateUrl);
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `Certificado-${fullName.replace(/\s+/g, '-')}.pdf`;
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
+    } catch (error) {
+      console.error('Error downloading PDF:', error);
+      alert('Error al descargar el PDF. Intente nuevamente.');
+    } finally {
+      setDownloadingPdf(false);
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -253,14 +277,14 @@ export default function CursoPage() {
                 </div>
 
                 <div className="space-y-4">
-                  <a
-                    href={certificateUrl}
-                    className="block w-full text-white text-center px-6 py-4 rounded-lg font-semibold text-lg hover:opacity-90 transition-opacity"
+                  <button
+                    onClick={handleDownloadPdf}
+                    disabled={downloadingPdf}
+                    className="block w-full text-white text-center px-6 py-4 rounded-lg font-semibold text-lg hover:opacity-90 transition-opacity disabled:opacity-50 disabled:cursor-not-allowed"
                     style={{ backgroundColor: '#5C00D6' }}
-                    download
                   >
-                    📄 Descargar Certificado PDF
-                  </a>
+                    {downloadingPdf ? '⏳ Descargando...' : '📄 Descargar Certificado PDF'}
+                  </button>
 
                   <a
                     href={validationUrl}
