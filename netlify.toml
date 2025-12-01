@@ -5,6 +5,20 @@
 
 [functions]
   directory = ".netlify/functions"
+  # Include PDFs and static assets in function bundles
+  included_files = ["lib/**/*.pdf"]
 
 [[plugins]]
   package = "@netlify/plugin-nextjs"
+
+# For testing branch: remove cached functions before build to avoid stale Lambda bundles
+[context]
+  [context.testing]
+    # Clear any existing compiled functions AND .next cache, then rebuild
+    command = "rm -rf .netlify .next && npm run build"
+
+    [[context.testing.headers]]
+    for = "/_next/static/*"
+
+      [context.testing.headers.values]
+      Cache-Control = "public, max-age=31536000, immutable"

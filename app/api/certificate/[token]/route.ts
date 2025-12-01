@@ -1,125 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { validateStudentCompletion } from '@/lib/canvasAPI';
-import { getCourseConfig } from '@/lib/sheetsConfig';
-import { generateCertificateToken, saveCertificate, getCertificate } from '@/lib/certificateStorage';
-import { generatePDF } from '@/lib/generatePDF';
-import type { CertificateData, CertificateResponse } from '@/lib/types';
+import { getCertificate } from '@/lib/certificateStorage';
+import { generatePDF } from '@/lib/pdfGenerator';
 
-const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000';
-
-/**
- * API Route: POST /api/certificate
- * 
- * Genera un certificado PDF para un estudiante que completó un curso
- * 
- * Body esperado:
- * {
- *   "courseId": "123456",
- *   "studentEmail": "estudiante@example.com"
- * }
- * 
- * Respuesta:
- * {
- *   "success": true,
- *   "message": "Certificado generado exitosamente",
- *   "certificateUrl": "https://certificados.itschool.com.ar/api/certificate/abc123",
- *   "token": "abc123...",
- *   "validationUrl": "https://certificados.itschool.com.ar/validar/abc123"
- * }
- */
-export async function POST(request: NextRequest) {
-  try {
-    // Parsear el body
-    const body = await request.json();
-    const { courseId, studentEmail } = body;
-
-    // Validar parámetros requeridos
-    if (!courseId || !studentEmail) {
-      return NextResponse.json(
-        {
-          success: false,
-          message: 'Faltan parámetros requeridos: courseId y studentEmail',
-        } as CertificateResponse,
-        { status: 400 }
-      );
-    }
-
-    // Obtener configuración del curso
-    const courseConfig = await getCourseConfig(courseId);
-    
-    if (!courseConfig) {
-      return NextResponse.json(
-        {
-          success: false,
-          message: 'Curso no encontrado o no habilitado para certificados',
-        } as CertificateResponse,
-        { status: 404 }
-      );
-    }
-
-    // Validar que el estudiante completó el curso (passing score fijo: 70)
-    const validation = await validateStudentCompletion(
-      courseId,
-      studentEmail,
-      70
-    );
-
-    if (!validation.isValid) {
-      return NextResponse.json(
-        {
-          success: false,
-          message: validation.message,
-        } as CertificateResponse,
-        { status: 400 }
-      );
-    }
-
-    // Generar token único para el certificado
-    const token = generateCertificateToken();
-    const validationUrl = `${BASE_URL}/validar/${token}`;
-    const certificateUrl = `${BASE_URL}/api/certificate/${token}`;
-
-    // Preparar datos del certificado
-    const certificateData: CertificateData = {
-      token,
-      studentName: validation.student!.name,
-      studentEmail: validation.student!.email,
-      courseName: courseConfig.courseName,
-      courseId,
-      completionDate: validation.submission!.gradedAt!,
-      instructorName: courseConfig.instructorName,
-      duration: 'Curso completado', // Duration genérico
-      score: validation.submission!.score!,
-      validationUrl,
-      generatedAt: new Date().toISOString(),
-    };
-
-    // Guardar datos del certificado en Redis
-    await saveCertificate(token, certificateData);
-
-    // Retornar URLs del certificado
-    return NextResponse.json(
-      {
-        success: true,
-        message: 'Certificado generado exitosamente',
-        certificateUrl,
-        token,
-        validationUrl,
-      } as CertificateResponse,
-      { status: 201 }
-    );
-  } catch (error) {
-    console.error('Error en POST /api/certificate:', error);
-    
-    return NextResponse.json(
-      {
-        success: false,
-        message: 'Error interno del servidor',
-      } as CertificateResponse,
-      { status: 500 }
-    );
-  }
-}
+const DEPLOY_VERSION = 'v3.0-logs-2025-11-28';
 
 /**
  * API Route: GET /api/certificate/[token]
@@ -144,16 +27,16 @@ export async function GET(
       );
     }
 
-    console.log('📄 Generando PDF para:', {
+    console.log(`🚀 [${DEPLOY_VERSION}] 📄 Generando PDF para:`, {
       student: certificateData.studentName,
       course: certificateData.courseName,
       token: token.substring(0, 10) + '...'
     });
 
     // Generar PDF
+    console.log(`🚀 [${DEPLOY_VERSION}] Llamando a generatePDF()`);
     const pdfBuffer = await generatePDF(certificateData);
-    
-    console.log('✅ PDF generado exitosamente, tamaño:', pdfBuffer.length, 'bytes');
+    console.log(`✅ [${DEPLOY_VERSION}] PDF generado exitosamente, tamaño:`, pdfBuffer.length, 'bytes');
 
     // Normalizar nombre del estudiante
     const studentNameSafe = (certificateData.studentName || 'estudiante')
@@ -183,8 +66,11 @@ export async function GET(
       status: 200,
       headers: {
         'Content-Type': 'application/pdf',
-        'Content-Disposition': `inline; filename="${filename}"; filename*=UTF-8''${encodeURIComponent(filename)}`,
+        'Content-Disposition': `attachment; filename="${filename}"; filename*=UTF-8''${encodeURIComponent(filename)}`,
         'Cache-Control': 'public, max-age=31536000, immutable',
+        'Access-Control-Allow-Origin': '*',
+        'Access-Control-Allow-Methods': 'GET, OPTIONS',
+        'Access-Control-Allow-Headers': 'Content-Type',
       },
     });
   } catch (error) {

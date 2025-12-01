@@ -144,13 +144,18 @@ No duration/passing score columns - duration is generic text, passing score hard
 No duration/passing score columns - duration is generic text, passing score hardcoded to 70.
 
 ## PDF Coordinate System & Design Workflow
+<<<<<<< HEAD
 `certificateTemplate.pdf` is A4 landscape (842x595 pts). Origin is bottom-left. 
+=======
+`certificateTemplate.pdf` dimensions vary. Origin is bottom-left. **Measurements in CM converted to points (1cm = 28.35pts)**.
+>>>>>>> testing
 
 **Design Process**:
 1. Create certificate design in Canva/Figma (leave space for dynamic text)
 2. Export as PDF → save as `lib/certificateTemplate.pdf`
 3. Adjust coordinates in `lib/generatePDF.ts` to match layout
 
+<<<<<<< HEAD
 **Current overlays** (from `generatePDF.ts`):
 - **Course name**: x=450, y=330, size=36pt, HelveticaBold, blue (#3B82F6) [right of rocket emoji]
 - **Student name**: centered, y=250, size=28pt, HelveticaBold, uppercase, blue
@@ -159,6 +164,50 @@ No duration/passing score columns - duration is generic text, passing score hard
 
 **Font limitation**: pdf-lib only supports standard PDF fonts (Helvetica, Times, Courier). Canva designs with Poppins/custom fonts approximate to HelveticaBold.
 
+=======
+**EXACT SPECIFICATIONS** (Updated Nov 2025 - Final):
+
+**Color**: #4285F4 (azul corporativo) - applies to ALL certificate text
+
+**Course Title**:
+- Position: x=1.07cm, y=9.64cm (from top)
+- Size: 39pt, HelveticaBold
+- Line height: 1.2 (interlineado)
+- **MAX width**: 20.78cm
+- Multi-line support: Text wraps automatically if exceeds max width
+
+**Rocket Icon** (🚀 rocket-icon.png):
+- Position: Dynamic - calculated as 1cm to the right of the longest line in the title
+- Size: 35x35pts
+- Logic: 
+  - Single line: Aligned with title baseline
+  - Multiple lines: Vertically centered in the middle of all lines
+- File: `lib/rocket-icon.png` (PNG with transparent background)
+
+**Line 1**: "Desde ITSCHOOL certificamos que [STUDENT NAME IN BOLD] ha finalizado y aprobado el curso."
+- Position: x=1.07cm, y=12.5cm (from top)
+- Size: 14pt
+- Font: Helvetica (regular), student name in HelveticaBold
+
+**Line 2**: "Cumpliendo todos los requisitos exigidos."
+- Position: x=1.07cm, y=13.59cm (from top)
+- Size: 14pt, Helvetica
+
+**Instructor Section** (two lines, both centered):
+- Line 1 "Docente": x=14.06cm (centered), y=18.65cm (from top), 11pt
+- Line 2 (Instructor name): x=14.06cm (centered), y=19.25cm (from top), 11pt
+- Both lines use same center point for alignment
+
+**QR Code**:
+- Position: x=width-qrSize-80pts (dynamic, right side), y=70pts (bottom-right corner)
+- Size: 80x80pts
+- Color: #4285F4 (azul corporativo, matching text color)
+
+**Font limitation**: pdf-lib only supports standard PDF fonts (Helvetica, Times, Courier). Canva designs with Poppins/custom fonts approximate to HelveticaBold.
+
+**Template dimensions**: 842.25 x 595.5 pts (A4 landscape)
+
+>>>>>>> testing
 ## User-Facing Error Messages
 
 Validation errors in `/api/validate` should return user-friendly Spanish messages:
@@ -215,6 +264,7 @@ Validation errors in `/api/validate` should return user-friendly Spanish message
 - **Testing branch**: `testing` or `dev` → separate Netlify site for testing changes
 - Netlify supports **branch deploys**: configure in Site settings → Build & deploy → Branch deploys
 
+<<<<<<< HEAD
 **Current test course**: Course ID `12112663` ("Optimizaciones de Procesos y Herramientas IA")
 
 ### Testing vs Production Workflow
@@ -227,6 +277,37 @@ Validation errors in `/api/validate` should return user-friendly Spanish message
 **Current test course**: Course ID `12112663` ("Optimizaciones de Procesos y Herramientas IA")
 - **No fixed IP address**: Netlify Functions run on AWS Lambda with rotating IPs. Cannot whitelist for Canvas API.
 
+=======
+**Current test course**: Course ID `12112663` ("Optimización de procesos con herramientas de IA")
+- Test email: morena.caparros@grupokelsoft.com
+- Instructor: Morena Caparrós
+- **No fixed IP address**: Netlify Functions run on AWS Lambda with rotating IPs. Cannot whitelist for Canvas API.
+
+## ITSCHOOL Brand Colors
+
+Use these colors throughout the application (UI, validation page, error messages):
+
+**Primary Colors (from logo)**:
+| Usage | Color | Hex Code | Description |
+|-------|-------|----------|-------------|
+| **Primary (Brand)** | Celeste | `#4285F4` | Main brand color. Use for buttons, headings, links, important UI elements. |
+| **Secondary (Brand)** | Azul | `#393185` | Secondary brand color. Use for gradients, alternate buttons, dark accents. |
+| **Contrast (Dark Text)** | Gris Oscuro/Negro Suave | `#1A1A1A` | Primary text on light backgrounds. |
+| **Base (Light Background)** | Blanco Puro | `#FFFFFF` | Main background color for certificates and UI. |
+| **Text/Secondary Details** | Gris Neutro | `#666666` | Secondary text, hints, dates, instructor names, dividing lines. |
+
+**Accent Colors (less prominent)**:
+- Yellow: `#FABB05` - Warnings or highlights
+- Red: `#E94235` - Errors or important warnings
+- Green: `#34A853` - Success states or confirmations
+
+**Certificate text color**: Uses `#4285F4` (Celeste) for all certificate text overlays, matching the primary brand color.
+
+**Assets**: 
+- ITSCHOOL logo: `Logo Original a color.svg` (use in validation page and UI)
+- Rocket icon: `lib/rocket-icon.png` (35x35pts, transparent background)
+
+>>>>>>> testing
 ## Recent Architectural Decisions (Nov 2025)
 
 1. **PDF Generation**: Puppeteer → pdf-lib

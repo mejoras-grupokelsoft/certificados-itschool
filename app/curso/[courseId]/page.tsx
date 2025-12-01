@@ -22,6 +22,55 @@ export default function CursoPage() {
   const [step, setStep] = useState<'form' | 'validating' | 'generating' | 'success'>('form');
   const [certificateUrl, setCertificateUrl] = useState<string | null>(null);
   const [validationUrl, setValidationUrl] = useState<string | null>(null);
+  const [downloadingPdf, setDownloadingPdf] = useState(false);
+
+  const handleDownloadPdf = async (e?: React.MouseEvent) => {
+    // Prevenir navegación del navegador
+    if (e) {
+      e.preventDefault();
+      e.stopPropagation();
+    }
+    
+    if (!certificateUrl) return;
+    
+    setDownloadingPdf(true);
+    try {
+      // Agregar timestamp para evitar caché
+      const downloadUrl = `${certificateUrl}?download=true&t=${Date.now()}`;
+      const response = await fetch(downloadUrl);
+      
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      
+      const blob = await response.blob();
+      
+      // Verificar que sea un PDF
+      if (!blob.type.includes('pdf')) {
+        console.warn('Response is not a PDF:', blob.type);
+      }
+      
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `Certificado-${fullName.replace(/\s+/g, '-')}.pdf`;
+      a.style.display = 'none';
+      document.body.appendChild(a);
+      a.click();
+      
+      // Cleanup después de un pequeño delay
+      setTimeout(() => {
+        window.URL.revokeObjectURL(url);
+        document.body.removeChild(a);
+      }, 100);
+    } catch (error) {
+      console.error('Error downloading PDF:', error);
+      // Fallback: abrir en nueva pestaña si fetch falla
+      window.open(certificateUrl, '_blank');
+    } finally {
+      setDownloadingPdf(false);
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -95,36 +144,35 @@ export default function CursoPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-white to-purple-50">
+    <div className="min-h-screen bg-white">
       <div className="container mx-auto px-4 py-12">
         {/* Header */}
-        <div className="text-center mb-12">
-          <Link href="/" className="inline-block mb-6">
-            <h1 className="text-5xl font-bold text-indigo-600 hover:text-indigo-700 transition-colors">
-              IT SCHOOL
-            </h1>
+        <div className="flex justify-center mb-12">
+          <Link href="/" className="inline-block">
+            <img 
+              src="/Logo Original a color.svg" 
+              alt="ITSCHOOL Logo" 
+              className="h-20 w-auto"
+            />
           </Link>
-          <p className="text-gray-600 text-lg">
-            Sistema de Certificados
-          </p>
         </div>
 
         {/* Main Content */}
         <div className="max-w-2xl mx-auto">
           {step === 'form' && (
             <div className="bg-white rounded-2xl shadow-xl p-8 md:p-12">
-              <h2 className="text-3xl font-bold text-gray-900 mb-4 text-center">
-                Obtén tu Certificado
+              <h2 className="text-3xl font-bold mb-4 text-center" style={{ color: '#1A1A1A' }}>
+                Obtené tu Certificado
               </h2>
-              <p className="text-gray-600 text-center mb-8">
-                Ingresa tus datos para generar tu certificado
+              <p className="text-center mb-8" style={{ color: '#666666' }}>
+                Ingresá tus datos para generar tu certificado
               </p>
 
               <form onSubmit={handleSubmit} className="space-y-6">
                 <div>
-                  <label htmlFor="fullName" className="block text-sm font-semibold text-gray-700 mb-2">
+                  <label htmlFor="fullName" className="block text-sm font-semibold mb-2" style={{ color: '#1A1A1A' }}>
                     Nombre y Apellido
-                    <span className="text-indigo-600 font-normal text-xs ml-2">
+                    <span className="font-normal text-xs ml-2" style={{ color: '#666666' }}>
                       (Este nombre aparecerá en tu certificado)
                     </span>
                   </label>
@@ -141,9 +189,9 @@ export default function CursoPage() {
                 </div>
 
                 <div>
-                  <label htmlFor="email" className="block text-sm font-semibold text-gray-700 mb-2">
-                    Email del Estudiante
-                    <span className="text-gray-500 font-normal text-xs ml-2">
+                  <label htmlFor="email" className="block text-sm font-semibold mb-2" style={{ color: '#1A1A1A' }}>
+                    Email
+                    <span className="font-normal text-xs ml-2" style={{ color: '#666666' }}>
                       (Debe ser el mismo email registrado en Canvas)
                     </span>
                   </label>
@@ -173,7 +221,8 @@ export default function CursoPage() {
                 <button
                   type="submit"
                   disabled={loading}
-                  className="w-full bg-indigo-600 text-white py-4 rounded-lg font-semibold text-lg hover:bg-indigo-700 transition-colors disabled:bg-gray-400 disabled:cursor-not-allowed"
+                  className="w-full text-white py-4 rounded-lg font-semibold text-lg hover:opacity-90 transition-opacity disabled:cursor-not-allowed"
+                  style={{ backgroundColor: loading ? '#666666' : '#4285F4' }}
                 >
                   {loading ? 'Procesando...' : 'Generar Certificado'}
                 </button>
@@ -183,28 +232,22 @@ export default function CursoPage() {
                 <h3 className="font-semibold text-gray-900 mb-3">Requisitos para obtener el certificado:</h3>
                 <ul className="space-y-2 text-gray-600 text-sm">
                   <li className="flex items-start">
-                    <svg className="w-5 h-5 text-indigo-600 mr-2 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <svg className="w-5 h-5 mr-2 flex-shrink-0 mt-0.5" style={{ color: '#5C00D6' }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                     </svg>
                     Estar inscrito en el curso en Canvas
                   </li>
                   <li className="flex items-start">
-                    <svg className="w-5 h-5 text-indigo-600 mr-2 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <svg className="w-5 h-5 mr-2 flex-shrink-0 mt-0.5" style={{ color: '#5C00D6' }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                     </svg>
                     Haber completado y entregado el examen final
                   </li>
                   <li className="flex items-start">
-                    <svg className="w-5 h-5 text-indigo-600 mr-2 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <svg className="w-5 h-5 mr-2 flex-shrink-0 mt-0.5" style={{ color: '#5C00D6' }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                     </svg>
                     Tener una calificación igual o superior al puntaje mínimo requerido
-                  </li>
-                  <li className="flex items-start">
-                    <svg className="w-5 h-5 text-indigo-600 mr-2 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                    </svg>
-                    Que el examen haya sido calificado por el instructor
                   </li>
                 </ul>
               </div>
@@ -213,11 +256,11 @@ export default function CursoPage() {
 
           {step === 'validating' && (
             <div className="bg-white rounded-2xl shadow-xl p-12 text-center">
-              <div className="animate-spin rounded-full h-16 w-16 border-b-4 border-indigo-600 mx-auto mb-6"></div>
-              <h2 className="text-2xl font-bold text-gray-900 mb-2">
+              <div className="animate-spin rounded-full h-16 w-16 border-b-4 mx-auto mb-6" style={{ borderColor: '#5C00D6' }}></div>
+              <h2 className="text-2xl font-bold mb-2" style={{ color: '#1A1A1A' }}>
                 Validando información...
               </h2>
-              <p className="text-gray-600">
+              <p style={{ color: '#666666' }}>
                 Estamos verificando tus datos en Canvas
               </p>
             </div>
@@ -225,7 +268,7 @@ export default function CursoPage() {
 
           {step === 'generating' && (
             <div className="bg-white rounded-2xl shadow-xl p-12 text-center">
-              <div className="animate-spin rounded-full h-16 w-16 border-b-4 border-purple-600 mx-auto mb-6"></div>
+              <div className="animate-spin rounded-full h-16 w-16 border-b-4 mx-auto mb-6" style={{ borderColor: '#5C00D6' }}></div>
               <h2 className="text-2xl font-bold text-gray-900 mb-2">
                 Generando tu certificado...
               </h2>
@@ -237,7 +280,7 @@ export default function CursoPage() {
 
           {step === 'success' && certificateUrl && validationUrl && (
             <div className="bg-white rounded-2xl shadow-xl overflow-hidden">
-              <div className="bg-gradient-to-r from-indigo-600 to-purple-600 p-8 text-center text-white">
+              <div className="p-8 text-center text-white" style={{ background: 'linear-gradient(135deg, #5C00D6 0%, #7B2FE4 100%)' }}>
                 <div className="inline-flex items-center justify-center w-20 h-20 rounded-full bg-white/20 mb-4">
                   <svg className="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
@@ -259,19 +302,22 @@ export default function CursoPage() {
                 </div>
 
                 <div className="space-y-4">
-                  <a
-                    href={certificateUrl}
-                    className="block w-full bg-indigo-600 text-white text-center px-6 py-4 rounded-lg font-semibold text-lg hover:bg-indigo-700 transition-colors"
-                    download
+                  <button
+                    type="button"
+                    onClick={(e) => handleDownloadPdf(e)}
+                    disabled={downloadingPdf}
+                    className="block w-full text-white text-center px-6 py-4 rounded-lg font-semibold text-lg hover:opacity-90 transition-opacity disabled:opacity-50 disabled:cursor-not-allowed"
+                    style={{ backgroundColor: '#5C00D6' }}
                   >
-                    📄 Descargar Certificado PDF
-                  </a>
+                    {downloadingPdf ? '⏳ Descargando...' : '📄 Descargar Certificado PDF'}
+                  </button>
 
                   <a
                     href={validationUrl}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="block w-full bg-purple-600 text-white text-center px-6 py-4 rounded-lg font-semibold text-lg hover:bg-purple-700 transition-colors"
+                    className="block w-full text-white text-center px-6 py-4 rounded-lg font-semibold text-lg hover:opacity-90 transition-opacity"
+                    style={{ backgroundColor: '#5C00D6', opacity: 0.85 }}
                   >
                     ✓ Ver Página de Validación
                   </a>
@@ -319,12 +365,10 @@ export default function CursoPage() {
         </div>
 
         {/* Footer */}
-        <div className="text-center mt-12 text-gray-600">
+        <div className="text-center mt-12" style={{ color: '#666666' }}>
           <p className="text-sm">
-            © {new Date().getFullYear()} IT School - Instituto de Tecnología y Desarrollo de Software
-          </p>
-          <p className="text-sm mt-2">
-            <a href="https://www.itschool.com.ar" className="text-indigo-600 hover:underline">
+            Si querés saber más de nosotros o ver más cursos, consultá nuestra página:{' '}
+            <a href="https://www.itschool.com.ar" target="_blank" rel="noopener noreferrer" className="hover:underline" style={{ color: '#5C00D6' }}>
               www.itschool.com.ar
             </a>
           </p>

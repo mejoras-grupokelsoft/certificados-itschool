@@ -88,6 +88,14 @@ export async function getCourseConfig(courseId: string): Promise<CourseConfig | 
 }
 
 /**
+ * Obtiene todos los cursos disponibles (alias para getCourseConfigs)
+ * Útil para listar todos los cursos en la interfaz
+ */
+export async function getAllCourses(): Promise<CourseConfig[]> {
+  return getCourseConfigs();
+}
+
+/**
  * Invalida el cache de configuración (útil para testing o forzar recarga)
  */
 export function clearConfigCache(): void {
