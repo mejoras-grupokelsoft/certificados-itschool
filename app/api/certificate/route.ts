@@ -3,6 +3,7 @@ import { saveCertificate, generateCertificateToken, getCertificate } from '@/lib
 import type { CertificateData, CertificateResponse } from '@/lib/types';
 
 const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000';
+const BUILD_VERSION = 'v4.0-force-rebuild-2025-12-01';
 
 /**
  * API Route: POST /api/certificate
@@ -12,6 +13,7 @@ const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000';
  */
 export async function POST(request: NextRequest) {
   try {
+    console.log(`🚀🚀🚀 [${BUILD_VERSION}] Certificate creation endpoint called`);
     const body = await request.json();
     const { 
       studentName, 

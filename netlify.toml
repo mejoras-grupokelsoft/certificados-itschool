@@ -12,8 +12,8 @@
 # For testing branch: remove cached functions before build to avoid stale Lambda bundles
 [context]
   [context.testing]
-    # Clear any existing compiled functions then run the normal build
-    command = "rm -rf .netlify/functions && npm run build"
+    # Clear any existing compiled functions AND .next cache, then rebuild
+    command = "rm -rf .netlify .next && npm run build"
 
     [[context.testing.headers]]
     for = "/_next/static/*"
