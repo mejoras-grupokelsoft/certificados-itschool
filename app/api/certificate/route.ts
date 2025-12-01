@@ -2,32 +2,28 @@ import { NextRequest, NextResponse } from 'next/server';
 import { saveCertificate, generateCertificateToken, getCertificate } from '@/lib/certificateStorage';
 import type { CertificateData, CertificateResponse } from '@/lib/types';
 
-// Detectar la URL base correcta según el entorno
-const getBaseUrl = () => {
-  // Netlify provee múltiples variables de entorno para URLs
-  const deployUrl = process.env.DEPLOY_URL;           // URL completa del deploy (incluye testing--)
-  const url = process.env.URL;                        // URL principal del sitio
-  const netlifyUrl = process.env.NETLIFY_URL;         // Otra URL de Netlify
-  const context = process.env.CONTEXT;                // branch-deploy, deploy-preview, production
+/**
+ * Detectar la URL base correcta según el entorno
+ * Netlify NO provee DEPLOY_URL/CONTEXT para Next.js Functions
+ * Solución: extraer el host del header de la request
+ */
+const getBaseUrl = (request: NextRequest): string => {
+  const host = request.headers.get('host');
   
-  console.log('🌐 Environment URLs:', {
-    DEPLOY_URL: deployUrl,
-    URL: url,
-    NETLIFY_URL: netlifyUrl,
-    CONTEXT: context,
-    NEXT_PUBLIC_BASE_URL: process.env.NEXT_PUBLIC_BASE_URL,
-  });
+  if (host) {
+    const protocol = host.includes('localhost') ? 'http' : 'https';
+    const baseUrl = `${protocol}://${host}`;
+    console.log('✅ Using BASE_URL from host header:', baseUrl);
+    return baseUrl;
+  }
   
-  // Prioridad: DEPLOY_URL > URL > NEXT_PUBLIC_BASE_URL > localhost
-  const baseUrl = deployUrl || url || process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000';
-  
-  console.log('✅ Using BASE_URL:', baseUrl);
-  
-  return baseUrl;
+  // Fallback para desarrollo local
+  const fallback = process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000';
+  console.log('⚠️ No host header found, using fallback:', fallback);
+  return fallback;
 };
 
-const BASE_URL = getBaseUrl();
-const BUILD_VERSION = 'v4.0-force-rebuild-2025-12-01';
+const BUILD_VERSION = 'v5.0-host-header-fix-2025-12-01';
 const BUILD_ID = `certificate-route-${new Date().toISOString()}-${Date.now()}`;
 const BUILD_TIMESTAMP = Date.now();
 
@@ -57,6 +53,9 @@ export async function POST(request: NextRequest) {
     const token = generateCertificateToken(studentEmail, courseId);
     console.log('🔑 Token generado:', token);
     
+    // Obtener BASE_URL del host header
+    const BASE_URL = getBaseUrl(request);
+    
     // Verificar si ya existe un certificado para este estudiante + curso
     const existingCertificate = await getCertificate(token);
     if (existingCertificate) {
@@ -67,7 +66,7 @@ export async function POST(request: NextRequest) {
           message: 'Certificado ya generado previamente',
           certificateUrl: `${BASE_URL}/api/certificate/${token}`,
           token,
-          validationUrl: existingCertificate.validationUrl,
+          validationUrl: `${BASE_URL}/validar/${token}`,
           existing: true,
         } as CertificateResponse,
         { status: 200 }
