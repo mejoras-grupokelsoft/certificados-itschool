@@ -2,7 +2,17 @@ import { NextRequest, NextResponse } from 'next/server';
 import { saveCertificate, generateCertificateToken, getCertificate } from '@/lib/certificateStorage';
 import type { CertificateData, CertificateResponse } from '@/lib/types';
 
-const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000';
+// Detectar la URL base correcta según el entorno
+const getBaseUrl = () => {
+  // En Netlify, usar DEPLOY_URL (incluye testing--, branch deploys, etc)
+  if (process.env.DEPLOY_URL) {
+    return process.env.DEPLOY_URL;
+  }
+  // Fallback a NEXT_PUBLIC_BASE_URL o localhost
+  return process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000';
+};
+
+const BASE_URL = getBaseUrl();
 const BUILD_VERSION = 'v4.0-force-rebuild-2025-12-01';
 const BUILD_ID = `certificate-route-${new Date().toISOString()}-${Date.now()}`;
 const BUILD_TIMESTAMP = Date.now();
