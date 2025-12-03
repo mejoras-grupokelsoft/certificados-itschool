@@ -4,6 +4,14 @@ const nextConfig: NextConfig = {
   /* config options here */
   reactCompiler: true,
   
+  // Marcar módulos nativos como externos para evitar bundling en Turbopack
+  serverExternalPackages: [
+    'canvas',
+    '@napi-rs/canvas',
+    'pdf-to-png-converter',
+    'sharp',
+  ],
+  
   // Asegurar que PDFs y assets estáticos se incluyan en el bundle
   webpack: (config, { isServer }) => {
     if (isServer) {

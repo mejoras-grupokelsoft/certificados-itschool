@@ -43,26 +43,7 @@ export async function generateCertificateAssets(
     const targetWidth = Math.round(width * scale);
     const targetHeight = Math.round(height * scale);
 
-    // Crear imagen PNG del certificado
-    // Nota: Como pdf-lib no tiene renderizado nativo, usamos una estrategia diferente
-    // Exportamos el PDF nuevamente y lo procesamos
-    
-    // Para simplificar, vamos a usar Canvas para renderizar
-    // En producción, considera usar Puppeteer o similar para mejor calidad
-    const { createCanvas, loadImage } = await import('canvas');
-    const canvas = createCanvas(targetWidth, targetHeight);
-    const ctx = canvas.getContext('2d');
-
-    // Fondo blanco
-    ctx.fillStyle = '#FFFFFF';
-    ctx.fillRect(0, 0, targetWidth, targetHeight);
-
-    // Renderizar el contenido del certificado
-    // Esto es una simplificación - en producción usa Puppeteer o similar
-    // Por ahora, exportamos el PDF y confiamos en que el usuario comparta el PDF
-    
-    // Alternativa: generar PNG directamente sin PDF
-    // Vamos a crear el PNG usando los mismos datos
+    // Generar PNG desde PDF usando pdf-to-png-converter
     const pngBuffer = await generateCertificatePNG(certificateData, targetWidth, targetHeight);
     
     const pngBase64 = `data:image/png;base64,${pngBuffer.toString('base64')}`;
