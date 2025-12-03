@@ -36,6 +36,7 @@ export interface CertificateData {
   score: number;
   validationUrl: string;
   generatedAt: string;
+  issueDate?: string; // Deprecated - use generatedAt instead
 }
 
 // Tipos para la respuesta de validación

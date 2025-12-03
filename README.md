@@ -1,30 +1,30 @@
 # Sistema de Certificados IT School
 
-Sistema automatizado de generación y validación de certificados digitales para cursos de IT School. Los estudiantes que completan un curso pueden obtener un certificado PDF profesional con código QR de validación.
+Sistema automatizado de generación y validación de certificados digitales para cursos de IT School. Los estudiantes que completen un curso con puntaje ≥70 en el Test Final pueden obtener un certificado PDF profesional con código QR de validación.
 
 ## 🎯 Características
 
-- ✅ **Validación automática** de estudiantes mediante Canvas LMS GraphQL API
-- ✅ **Busca automáticamente** el "Test Final" o "Examen Final" de cada curso
-- 📄 **Generación de certificados PDF** profesionales con diseño personalizado
-- 🔐 **Código QR único** en cada certificado para verificación de autenticidad
-- 💾 **Almacenamiento permanente** en Upstash Redis
+- ✅ **Validación automática** de estudiantes mediante Canvas LMS GraphQL API con paginación completa
+- ✅ **Auto-detección del Test Final** - excluye "Trabajo Práctico" automáticamente
+- 📄 **Generación de certificados PDF** con pdf-lib (~100KB) sobre template diseñado en Canva
+- 🔐 **Código QR único azul (#4285F4)** en cada certificado para verificación
+- 💾 **Almacenamiento permanente** en Upstash Redis (tokens determinísticos)
 - 🔍 **Página de validación pública** para verificar certificados
-- ⚙️ **Configuración simple** mediante Google Sheets (solo datos manuales)
+- ⚙️ **Configuración simple** mediante Google Sheets (3 columnas: CourseID, CourseName, InstructorName)
 - 🌐 **Completamente serverless** (Netlify + Upstash + Google Sheets)
 - 💰 **Costo $0** - todo en tiers gratuitos
 
 ## 🚀 Stack Tecnológico
 
-- **Framework**: Next.js 14 (App Router)
+- **Framework**: Next.js 16 (App Router)
 - **Lenguaje**: TypeScript
-- **Estilos**: Tailwind CSS
-- **PDF**: @react-pdf/renderer
+- **Estilos**: Tailwind CSS 4
+- **PDF**: pdf-lib (generación de PDF liviana)
 - **QR Codes**: qrcode
 - **Base de datos**: Upstash Redis (256MB gratis)
-- **CMS**: Google Sheets
+- **Configuración**: Google Sheets API (Service Account)
 - **API externa**: Canvas LMS GraphQL
-- **Deploy**: Netlify (gratis)
+- **Deploy**: Netlify con @netlify/plugin-nextjs
 
 ## 📋 Prerequisitos
 
@@ -80,22 +80,24 @@ NEXT_PUBLIC_BASE_URL=http://localhost:3000
 
 ### 4. Configurar Google Sheets
 
-Crea una hoja llamada **"Configuracion"** con esta estructura SIMPLE:
+Crea una hoja llamada **"Configuracion"** con esta estructura **SIMPLE (solo 3 columnas)**:
 
-| CourseID | CourseName | InstructorName | Duration | PassingScore | Enabled |
-|----------|------------|----------------|----------|--------------|---------|
-| 123456   | Python I   | Juan Pérez     | 3 meses  | 80           | TRUE    |
-| 234567   | JavaScript | María García   | 4 meses  | 75           | TRUE    |
+| CourseID | CourseName | InstructorName |
+|----------|------------|----------------|
+| 12112663 | Optimización de procesos con herramientas de IA | Morena Caparrós |
+| 123456   | Python I   | Juan Pérez     |
+| 234567   | JavaScript | María García   |
 
-**Columnas:**
-- `CourseID`: ID del curso en Canvas
+**Columnas requeridas:**
+- `CourseID`: ID del curso en Canvas (primera columna, fila 2 en adelante)
 - `CourseName`: Nombre del curso para el certificado
-- `InstructorName`: Nombre del instructor para firma
-- `Duration`: Duración del curso (ej: "3 meses", "40 horas")
-- `PassingScore`: Puntaje mínimo requerido
-- `Enabled`: TRUE o FALSE
+- `InstructorName`: Nombre del instructor para la firma
 
-**✨ El sistema busca automáticamente el "Test Final" o "Examen Final" - no necesitas IDs de assignments!**
+**Notas importantes:**
+- ✅ **Puntaje mínimo fijo: 70** (hardcodeado en el sistema)
+- ✅ **Auto-detección del Test Final**: busca automáticamente assignments con "Test Final"/"Examen Final"
+- ✅ **Excluye Trabajos Prácticos**: ignora assignments con "Trabajo Práctico"/"TP Final"
+- ⚠️ Cache de 5 minutos en memoria para reducir llamadas a Google Sheets API
 
 ### 5. Ejecutar en desarrollo
 
@@ -183,21 +185,31 @@ NEXT_PUBLIC_BASE_URL=https://certificadositschool.netlify.app
 ```
 certificados-itschool/
 ├── app/
-│   ├── page.tsx                          # Página de inicio
-│   ├── curso/[courseId]/page.tsx         # Solicitar certificado
-│   ├── validar/[token]/page.tsx          # Validación pública
+│   ├── page.tsx                          # Página de inicio (placeholder)
+│   ├── curso/[courseId]/page.tsx         # Solicitar certificado (formulario)
+│   ├── cursos/page.tsx                   # Listado de todos los cursos
+│   ├── validar/[token]/page.tsx          # Validación pública con logo ITSCHOOL
 │   └── api/
-│       ├── validate/route.ts             # API: Validar estudiante
+│       ├── validate/route.ts             # Validar estudiante + Canvas (3-step)
+│       ├── courses/route.ts              # Listar todos los cursos habilitados
 │       └── certificate/
-│           ├── [token]/route.ts          # API: Generar PDF
-│           └── validate/[token]/route.ts # API: Info certificado
+│           ├── route.ts                  # Crear certificado (POST)
+│           ├── [token]/route.ts          # Descargar PDF (GET)
+│           └── validate/[token]/route.ts # Info certificado para validación
 ├── lib/
-│   ├── types.ts                          # Tipos TypeScript
-│   ├── canvasAPI.ts                      # Canvas GraphQL + auto-detect exam
-│   ├── sheetsConfig.ts                   # Google Sheets
-│   ├── certificateStorage.ts             # Upstash Redis
-│   └── CertificadoPDF.tsx                # Componente PDF
-├── netlify.toml                          # Config de Netlify
+│   ├── types.ts                          # Tipos TypeScript (CertificateData, etc.)
+│   ├── canvasAPI.ts                      # Canvas GraphQL con paginación completa
+│   ├── sheetsConfig.ts                   # Google Sheets con cache de 5 min
+│   ├── certificateStorage.ts             # Upstash Redis (tokens SHA-256)
+│   ├── pdfGenerator.ts                   # Generación PDF con pdf-lib
+│   ├── certificateTemplateV2.pdf         # Template diseñado en Canva (A4 landscape)
+│   ├── rocket-icon.png                   # Ícono de cohete (35x35pts)
+│   └── Logo Original a color.svg         # Logo ITSCHOOL (para UI)
+├── scripts/
+│   ├── test-certificates.ts              # Script para testing masivo de PDFs
+│   └── run-test-certificates.js          # Wrapper para ejecutar tests
+├── netlify.toml                          # Config de Netlify + plugin Next.js
+├── .env.local.example                    # Template de variables de entorno
 └── README.md
 ```
 
@@ -209,8 +221,46 @@ Valida si estudiante puede obtener certificado.
 **Request:**
 ```json
 {
-  "courseId": "123456",
+  "courseId": "12112663",
   "studentEmail": "estudiante@example.com"
+}
+```
+
+**Response exitosa:**
+```json
+{
+  "success": true,
+  "message": "Estudiante validado correctamente",
+  "studentName": "Juan Pérez",
+  "studentEmail": "estudiante@example.com",
+  "courseName": "Python I",
+  "score": 95,
+  "courseConfig": {
+    "courseId": "12112663",
+    "courseName": "Python I",
+    "instructorName": "Juan Pérez"
+  }
+}
+```
+
+**Errores comunes:**
+- `400`: Puntaje < 70 → "Te falta alcanzar el puntaje mínimo para aprobar el Test Final"
+- `400`: Test no calificado → "Aún no finalizaste el curso"
+- `400`: Estudiante no inscrito → "No estás inscrito en este curso"
+- `404`: Curso no configurado → "Curso no encontrado o no habilitado para certificados"
+
+### POST /api/certificate
+Genera certificado para estudiante validado.
+
+**Request:**
+```json
+{
+  "studentName": "Juan Pérez",
+  "studentEmail": "estudiante@example.com",
+  "courseName": "Python I",
+  "courseId": "12112663",
+  "instructorName": "Juan Pérez",
+  "score": 95
 }
 ```
 
@@ -218,20 +268,47 @@ Valida si estudiante puede obtener certificado.
 ```json
 {
   "success": true,
-  "studentName": "Juan Pérez",
-  "courseName": "Python I",
-  "score": 95
+  "message": "Certificado generado exitosamente",
+  "certificateUrl": "https://certificados.itschool.com.ar/api/certificate/a3f5...",
+  "token": "a3f51b2c8d...",
+  "validationUrl": "https://certificados.itschool.com.ar/validar/a3f5...",
+  "existing": false
 }
 ```
 
-### POST /api/certificate
-Genera certificado para estudiante validado.
+**Nota**: Mismo estudiante + curso = mismo token (idempotente). `existing: true` si ya existía.
 
 ### GET /api/certificate/[token]
-Descarga PDF del certificado.
+Descarga PDF del certificado con nombre descriptivo: `Certificado-CourseName-StudentName.pdf`
 
 ### GET /api/certificate/validate/[token]
 Obtiene información del certificado (para página de validación).
+
+**Response:**
+```json
+{
+  "token": "a3f51b2c8d...",
+  "studentName": "Juan Pérez",
+  "courseName": "Python I",
+  "completionDate": "2025-12-02",
+  "instructorName": "Juan Pérez",
+  "generatedAt": "2025-12-02T15:30:00.000Z"
+}
+```
+
+### GET /api/courses
+Lista todos los cursos habilitados para certificados.
+
+**Response:**
+```json
+[
+  {
+    "courseId": "12112663",
+    "courseName": "Optimización de procesos con herramientas de IA",
+    "instructorName": "Morena Caparrós"
+  }
+]
+```
 
 ## 📊 Capacidad y Límites
 
@@ -259,21 +336,62 @@ Site → Functions → Ver logs en tiempo real
 ```
 
 ### Limpiar cache de configuración
-El cache se actualiza automáticamente cada 5 minutos.
+El cache se actualiza automáticamente cada 5 minutos. No requiere acción manual.
 
 ### Troubleshooting
 
 **Error: "Test Final no encontrado"**
-- Verifica que el curso tenga un assignment llamado "Test Final", "Examen Final" o "Final Exam"
-- El sistema busca automáticamente por estos nombres
+- Verifica que el curso tenga un assignment con "Test Final"/"Examen Final" en el nombre
+- El sistema **excluye automáticamente** "Trabajo Práctico"/"TP Final"
+- Patrón de búsqueda: case-insensitive, busca en todos los assignments del curso
+
+**Error: "Estudiante no encontrado" (pero SÍ está inscrito)**
+- **Paginación**: El sistema busca en TODAS las páginas de enrollments (100 por página)
+- Si hay 200+ estudiantes, el sistema sigue buscando hasta encontrar el email
+- Verifica que el email en Canvas coincida exactamente (case-insensitive)
+
+**Error: "Aún no finalizaste el curso"**
+- El Test Final debe estar **calificado** (`gradedAt` no null)
+- El puntaje debe ser **≥ 70**
+- El sistema busca la submission en TODAS las páginas (100 por página)
 
 **Error: "Error al leer Google Sheets"**
-- Verifica que la hoja se llame exactamente "Configuracion"
-- Comprueba que el Service Account tenga acceso
+- Verifica que la hoja se llame exactamente **"Configuracion"** (sin tilde)
+- Comprueba que el Service Account tenga acceso de lectura
+- Solo 3 columnas: CourseID, CourseName, InstructorName
 
 **Certificado no se genera**
-- Revisa los logs en Netlify Functions
-- Verifica que Upstash Redis esté conectado
+- Revisa los logs en Netlify Functions (buscar emoji 🚀🚀🚀 para ver versión)
+- Verifica que `certificateTemplateV2.pdf` exista en `lib/`
+- Verifica que `rocket-icon.png` exista en `lib/`
+- Comprueba conexión con Upstash Redis
+
+**PDF con texto cortado o mal posicionado**
+- Las coordenadas están en CM convertidas a puntos (1cm = 28.35pts)
+- Template es A4 landscape: 842.25 x 595.5 pts
+- Origen en pdf-lib: esquina inferior izquierda
+- Para ajustar: edita `lib/pdfGenerator.ts` (función `cmToPts()`)
+
+### Testing local
+
+```powershell
+# Ejecutar dev server
+npm run dev
+
+# Probar certificados masivamente (genera PDFs en /public/test-certificates/)
+npm run test:certificates
+```
+
+### Modificar diseño del certificado
+
+1. Diseña en Canva (A4 Landscape 297mm x 210mm)
+2. Deja espacios en blanco para: título del curso, nombre del estudiante, instructor, QR
+3. Exporta como PDF → guarda como `lib/certificateTemplateV2.pdf`
+4. Ajusta coordenadas en `lib/pdfGenerator.ts`:
+   - Usa función `cmToPts()` para convertir medidas de Canva
+   - Color azul corporativo: `#4285F4` (rgb(0.259, 0.522, 0.957))
+   - Fuentes: HelveticaBold (títulos), Helvetica (texto regular)
+5. Prueba con `npm run test:certificates`
 
 ## 📞 Soporte
 

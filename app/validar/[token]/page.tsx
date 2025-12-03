@@ -70,13 +70,17 @@ export default function ValidarCertificadoPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-white to-purple-50">
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-indigo-50">
       <div className="container mx-auto px-4 py-12">
         {/* Header */}
         <div className="text-center mb-12">
-          <h1 className="text-5xl font-bold text-indigo-600 mb-4">
-            IT SCHOOL
-          </h1>
+          <div className="flex justify-center mb-6">
+            <img 
+              src="/Logo Original a color.svg" 
+              alt="IT SCHOOL Logo" 
+              className="h-20 w-auto"
+            />
+          </div>
           <p className="text-gray-600 text-lg">
             Validación de Certificado
           </p>
@@ -86,7 +90,7 @@ export default function ValidarCertificadoPage() {
         <div className="max-w-3xl mx-auto">
           {loading && (
             <div className="bg-white rounded-2xl shadow-xl p-12 text-center">
-              <div className="animate-spin rounded-full h-16 w-16 border-b-4 border-indigo-600 mx-auto mb-6"></div>
+              <div className="animate-spin rounded-full h-16 w-16 border-b-4 border-[#4285F4] mx-auto mb-6"></div>
               <p className="text-gray-600 text-lg">Validando certificado...</p>
             </div>
           )}
@@ -107,7 +111,7 @@ export default function ValidarCertificadoPage() {
               <div className="text-center">
                 <Link
                   href="/"
-                  className="inline-block bg-indigo-600 text-white px-8 py-3 rounded-lg font-semibold hover:bg-indigo-700 transition-colors"
+                  className="inline-block bg-[#4285F4] text-white px-8 py-3 rounded-lg font-semibold hover:bg-[#393185] transition-colors"
                 >
                   Volver al Inicio
                 </Link>
@@ -118,7 +122,7 @@ export default function ValidarCertificadoPage() {
           {certificateInfo && (
             <div className="bg-white rounded-2xl shadow-xl overflow-hidden">
               {/* Success Header */}
-              <div className="bg-gradient-to-r from-indigo-600 to-purple-600 p-8 text-center text-white">
+              <div className="bg-gradient-to-r from-[#4285F4] to-[#393185] p-8 text-center text-white">
                 <div className="inline-flex items-center justify-center w-20 h-20 rounded-full bg-white/20 mb-4">
                   <svg className="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
@@ -127,7 +131,7 @@ export default function ValidarCertificadoPage() {
                 <h2 className="text-3xl font-bold mb-2">
                   ✓ Certificado Válido
                 </h2>
-                <p className="text-indigo-100">
+                <p className="text-blue-100">
                   Este certificado ha sido verificado y es auténtico
                 </p>
               </div>
@@ -151,7 +155,7 @@ export default function ValidarCertificadoPage() {
                     <label className="text-sm font-semibold text-gray-500 uppercase tracking-wide">
                       Curso Completado
                     </label>
-                    <p className="text-2xl font-bold text-indigo-600 mt-2">
+                    <p className="text-2xl font-bold text-[#4285F4] mt-2">
                       {certificateInfo.courseName}
                     </p>
                   </div>
@@ -203,7 +207,7 @@ export default function ValidarCertificadoPage() {
                 <div className="flex gap-4 mt-8">
                   <a
                     href={`/api/certificate/${token}`}
-                    className="flex-1 bg-indigo-600 text-white text-center px-6 py-3 rounded-lg font-semibold hover:bg-indigo-700 transition-colors"
+                    className="flex-1 bg-[#4285F4] text-white text-center px-6 py-3 rounded-lg font-semibold hover:bg-[#393185] transition-colors"
                     download
                   >
                     Descargar Certificado PDF
@@ -226,7 +230,7 @@ export default function ValidarCertificadoPage() {
             © {new Date().getFullYear()} IT School - Instituto de Tecnología y Desarrollo de Software
           </p>
           <p className="text-sm mt-2">
-            <a href="https://www.itschool.com.ar" className="text-indigo-600 hover:underline">
+            <a href="https://www.itschool.com.ar" className="text-[#4285F4] hover:underline">
               www.itschool.com.ar
             </a>
           </p>

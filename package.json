@@ -6,21 +6,23 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "test:certificates": "cross-env DOTENV_CONFIG_PATH=.env.local tsx -r dotenv/config scripts/test-certificates.ts",
+    "test:png": "cross-env DOTENV_CONFIG_PATH=.env.local tsx -r dotenv/config scripts/test-png-generation.ts"
   },
   "dependencies": {
     "@netlify/plugin-nextjs": "^5.14.7",
-    "@react-pdf/renderer": "^4.3.1",
     "@upstash/redis": "^1.35.6",
-    "dotenv": "^17.2.3",
+    "canvas": "^3.2.0",
     "googleapis": "^166.0.0",
     "graphql-request": "^7.3.4",
     "next": "16.0.3",
     "pdf-lib": "^1.17.1",
+    "pdf-to-png-converter": "^3.11.0",
     "qrcode": "^1.5.4",
-    "react": "19.2.0",
-    "react-dom": "19.2.0",
-    "zod": "^4.1.12"
+    "react": "^19.2.1",
+    "react-dom": "^19.2.1",
+    "sharp": "^0.34.5"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",
@@ -29,6 +31,8 @@
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "babel-plugin-react-compiler": "1.0.0",
+    "cross-env": "^10.1.0",
+    "dotenv": "^17.2.3",
     "eslint": "^9",
     "eslint-config-next": "16.0.3",
     "tailwindcss": "^4",

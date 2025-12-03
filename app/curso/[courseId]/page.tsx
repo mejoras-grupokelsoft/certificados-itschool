@@ -23,6 +23,10 @@ export default function CursoPage() {
   const [certificateUrl, setCertificateUrl] = useState<string | null>(null);
   const [validationUrl, setValidationUrl] = useState<string | null>(null);
   const [downloadingPdf, setDownloadingPdf] = useState(false);
+  const [hasSharedLinkedIn, setHasSharedLinkedIn] = useState(false);
+  const [courseName, setCourseName] = useState<string>('');
+  const [certificateToken, setCertificateToken] = useState<string | null>(null);
+  const [sharingPNG, setSharingPNG] = useState(false);
 
   const handleDownloadPdf = async (e?: React.MouseEvent) => {
     // Prevenir navegación del navegador
@@ -69,6 +73,58 @@ export default function CursoPage() {
       window.open(certificateUrl, '_blank');
     } finally {
       setDownloadingPdf(false);
+    }
+  };
+
+  const handleSharePNG = async () => {
+    if (!certificateToken) return;
+    
+    setSharingPNG(true);
+    try {
+      // Obtener el PNG del certificado
+      const pngUrl = `/api/share/${certificateToken}`;
+      const response = await fetch(pngUrl);
+      
+      if (!response.ok) {
+        throw new Error('Error obteniendo imagen');
+      }
+      
+      const blob = await response.blob();
+      const file = new File([blob], `Certificado-${fullName.replace(/\s+/g, '-')}-ITSchool.png`, { type: 'image/png' });
+
+      // Intentar usar Web Share API si está disponible
+      if (navigator.share && navigator.canShare && navigator.canShare({ files: [file] })) {
+        await navigator.share({
+          files: [file],
+          title: `Certificado de ${courseName}`,
+          text: `¡Completé exitosamente el curso de ${courseName} en @itschool - Educación IT! 🚀`,
+        });
+        console.log('✅ Compartido exitosamente via Web Share API');
+        setHasSharedLinkedIn(true);
+      } else {
+        // Fallback: descargar la imagen
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `Certificado-${fullName.replace(/\s+/g, '-')}-ITSchool.png`;
+        document.body.appendChild(a);
+        a.click();
+        window.URL.revokeObjectURL(url);
+        document.body.removeChild(a);
+        
+        // Abrir LinkedIn después de descargar
+        setTimeout(() => {
+          window.open('https://www.linkedin.com/feed/', '_blank');
+          setHasSharedLinkedIn(true);
+        }, 1000);
+      }
+    } catch (error) {
+      if ((error as Error).name !== 'AbortError') {
+        console.error('Error compartiendo:', error);
+        alert('Error al compartir. Por favor, intenta nuevamente.');
+      }
+    } finally {
+      setSharingPNG(false);
     }
   };
 
@@ -134,6 +190,8 @@ export default function CursoPage() {
       // Éxito!
       setCertificateUrl(certificateData.certificateUrl);
       setValidationUrl(certificateData.validationUrl);
+      setCertificateToken(certificateData.token);
+      setCourseName(validateData.courseName);
       setStep('success');
     } catch (err) {
       setError('Error de conexión. Intente nuevamente.');
@@ -300,16 +358,53 @@ export default function CursoPage() {
                     Tu certificado ha sido generado exitosamente y ya está disponible para descarga
                   </p>
                 </div>
-
                 <div className="space-y-4">
+                  {/* Botón de compartir - Debe ser clickeado primero */}
+                  {!hasSharedLinkedIn && (
+                    <div className="bg-gradient-to-r from-blue-50 to-indigo-50 border-2 border-blue-200 rounded-lg p-6 mb-4">
+                      <p className="text-blue-900 text-center font-bold text-xl mb-2">
+                        🎉 ¡Compartí tu logro en redes sociales!
+                      </p>
+                      <p className="text-blue-700 text-center text-sm mb-4">
+                        Descargá tu certificado como imagen PNG y compartilo en LinkedIn, Instagram o X mencionando @itschool - Educación IT
+                      </p>
+                      <button
+                        type="button"
+                        onClick={handleSharePNG}
+                        disabled={sharingPNG}
+                        className="block w-full bg-gradient-to-r from-[#0A66C2] to-[#004182] text-white text-center px-6 py-4 rounded-lg font-semibold text-lg hover:shadow-lg transition-all flex items-center justify-center gap-3 disabled:opacity-50"
+                      >
+                        <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z" />
+                        </svg>
+                        {sharingPNG ? '⏳ Generando imagen...' : '📸 Compartir certificado (PNG)'}
+                      </button>
+                      <p className="text-xs text-center text-gray-500 mt-3">
+                        {typeof navigator !== 'undefined' && navigator.share ? 
+                          '✨ Tu navegador soporta compartir directo' : 
+                          '📥 Se descargará la imagen para que la subas manualmente'}
+                      </p>
+                    </div>
+                  )}
+
+                  {hasSharedLinkedIn && (
+                    <div className="bg-gradient-to-r from-green-50 to-emerald-50 border-2 border-green-200 rounded-lg p-4 mb-4 text-center">
+                      <p className="text-green-800 font-bold text-lg">✓ ¡Gracias por compartir tu logro!</p>
+                      <p className="text-green-700 text-sm mt-1">Ahora podés descargar tu certificado en PDF las veces que quieras</p>
+                    </div>
+                  )}
+
                   <button
                     type="button"
                     onClick={(e) => handleDownloadPdf(e)}
-                    disabled={downloadingPdf}
-                    className="block w-full text-white text-center px-6 py-4 rounded-lg font-semibold text-lg hover:opacity-90 transition-opacity disabled:opacity-50 disabled:cursor-not-allowed"
-                    style={{ backgroundColor: '#5C00D6' }}
+                    disabled={downloadingPdf || !hasSharedLinkedIn}
+                    className="block w-full text-white text-center px-6 py-4 rounded-lg font-semibold text-lg hover:opacity-90 transition-opacity disabled:opacity-50 disabled:cursor-not-allowed relative"
+                    style={{ backgroundColor: hasSharedLinkedIn ? '#5C00D6' : '#9CA3AF' }}
                   >
-                    {downloadingPdf ? '⏳ Descargando...' : '📄 Descargar Certificado PDF'}
+                    {!hasSharedLinkedIn && (
+                      <span className="absolute left-4 top-1/2 transform -translate-y-1/2">🔒</span>
+                    )}
+                    {downloadingPdf ? '⏳ Descargando...' : hasSharedLinkedIn ? '📄 Descargar Certificado PDF (otra vez)' : '📄 Descargá primero con el botón de arriba'}
                   </button>
 
                   <a
@@ -329,6 +424,8 @@ export default function CursoPage() {
                       setFullName('');
                       setCertificateUrl(null);
                       setValidationUrl(null);
+                      setHasSharedLinkedIn(false);
+                      setCourseName('');
                     }}
                     className="block w-full bg-gray-200 text-gray-700 text-center px-6 py-4 rounded-lg font-semibold hover:bg-gray-300 transition-colors"
                   >
