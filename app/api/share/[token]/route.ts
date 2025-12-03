@@ -10,7 +10,7 @@ export const dynamic = 'force-dynamic';
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { token: string } }
+  context: { params: Promise<{ token: string }> }
 ) {
   // Funcionalidad temporalmente deshabilitada debido a conflictos con módulos nativos (@napi-rs/canvas)
   // en el build de Netlify con Turbopack

@@ -1,7 +1,7 @@
 import { Metadata } from 'next';
 
-export async function generateMetadata({ params }: { params: { token: string } }): Promise<Metadata> {
-  const token = params.token;
+export async function generateMetadata({ params }: { params: Promise<{ token: string }> }): Promise<Metadata> {
+  const { token } = await params;
   
   // Intentar obtener información del certificado para metadata
   try {
