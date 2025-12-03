@@ -6,9 +6,6 @@ const nextConfig: NextConfig = {
   
   // Marcar módulos nativos como externos para evitar bundling en Turbopack
   serverExternalPackages: [
-    'canvas',
-    '@napi-rs/canvas',
-    'pdf-to-png-converter',
     'sharp',
   ],
   
