@@ -12,10 +12,13 @@ interface Course {
 export default function CursosPage() {
   const [courses, setCourses] = useState<Course[]>([]);
   const [filteredCourses, setFilteredCourses] = useState<Course[]>([]);
+  const [displayedCourses, setDisplayedCourses] = useState<Course[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc');
+  const [page, setPage] = useState(1);
+  const COURSES_PER_PAGE = 10;
 
   useEffect(() => {
     fetchCourses();
@@ -24,6 +27,16 @@ export default function CursosPage() {
   useEffect(() => {
     filterAndSortCourses();
   }, [courses, searchTerm, sortOrder]);
+
+  useEffect(() => {
+    // Actualizar cursos mostrados según la paginación
+    setDisplayedCourses(filteredCourses.slice(0, page * COURSES_PER_PAGE));
+  }, [filteredCourses, page]);
+
+  useEffect(() => {
+    // Resetear paginación cuando cambian los filtros
+    setPage(1);
+  }, [searchTerm, sortOrder]);
 
   const fetchCourses = async () => {
     try {
@@ -59,6 +72,12 @@ export default function CursosPage() {
 
     setFilteredCourses(filtered);
   };
+
+  const loadMoreCourses = () => {
+    setPage(prev => prev + 1);
+  };
+
+  const hasMoreCourses = displayedCourses.length < filteredCourses.length;
 
   return (
     <div className="min-h-screen bg-white">
@@ -141,8 +160,9 @@ export default function CursosPage() {
           )}
 
           {!loading && !error && filteredCourses.length > 0 && (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {filteredCourses.map((course) => (
+            <>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {displayedCourses.map((course) => (
                 <Link
                   key={course.courseId}
                   href={`/curso/${course.courseId}`}
@@ -181,7 +201,21 @@ export default function CursosPage() {
                   </div>
                 </Link>
               ))}
-            </div>
+              </div>
+
+              {/* Botón Cargar Más */}
+              {hasMoreCourses && (
+                <div className="text-center mt-8">
+                  <button
+                    onClick={loadMoreCourses}
+                    className="px-8 py-3 text-white rounded-lg font-semibold hover:opacity-90 transition-opacity"
+                    style={{ backgroundColor: '#4285F4' }}
+                  >
+                    Cargar más cursos ({filteredCourses.length - displayedCourses.length} restantes)
+                  </button>
+                </div>
+              )}
+            </>
           )}
         </div>
 

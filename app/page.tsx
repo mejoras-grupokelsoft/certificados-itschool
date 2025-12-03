@@ -5,12 +5,14 @@ export default function HomePage() {
     <div className="min-h-screen bg-white">
       <div className="container mx-auto px-4 py-12">
         {/* Header con Logo */}
-        <div className="flex justify-center mb-16">
-          <img 
-            src="/Logo Original a color.svg" 
-            alt="ITSCHOOL Logo" 
-            className="h-24 w-auto"
-          />
+        <div className="flex justify-center mb-8">
+          <Link href="/">
+            <img 
+              src="/Logo Original a color.svg" 
+              alt="ITSCHOOL Logo" 
+              className="h-20 w-auto cursor-pointer"
+            />
+          </Link>
         </div>
 
         {/* Main Content */}
