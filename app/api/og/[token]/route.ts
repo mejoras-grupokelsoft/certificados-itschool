@@ -8,10 +8,10 @@ import { getCertificate } from '@/lib/certificateStorage';
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { token: string } }
+  context: { params: Promise<{ token: string }> }
 ) {
   try {
-    const { token } = params;
+    const { token } = await context.params;
     
     // Obtener datos del certificado
     const certificate = await getCertificate(token);
