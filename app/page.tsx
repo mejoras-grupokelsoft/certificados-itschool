@@ -15,16 +15,19 @@ export default function HomePage() {
           </Link>
         </div>
 
+        {/* Título */}
+        <div className="max-w-6xl mx-auto mb-8">
+          <h1 className="text-4xl font-bold text-center mb-4" style={{ color: '#1A1A1A' }}>
+            Sistema de Certificados
+          </h1>
+          <p className="text-center" style={{ color: '#666666' }}>
+            Obtené tu certificado digital verificable al completar nuestros cursos
+          </p>
+        </div>
+
         {/* Main Content */}
         <div className="max-w-4xl mx-auto">
           <div className="bg-white rounded-2xl shadow-xl p-12 mb-8">
-            <h2 className="text-4xl font-bold mb-6 text-center" style={{ color: '#1A1A1A' }}>
-              Sistema de Certificados
-            </h2>
-            <p className="text-lg text-center mb-12" style={{ color: '#666666' }}>
-              Obtené tu certificado digital verificable al completar nuestros cursos
-            </p>
-
             <div className="rounded-xl p-8 text-center" style={{ background: 'linear-gradient(135deg, #4285F4 0%, #393185 100%)' }}>
               <h3 className="font-bold text-white text-xl mb-4">
                 ¿Completaste un curso?
