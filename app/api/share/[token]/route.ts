@@ -4,7 +4,6 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { getCertificate } from '@/lib/certificateStorage';
-import { generateSharePNG } from '@/lib/generateCertificateAssets';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -25,6 +24,9 @@ export async function GET(
 
     console.log('📸 Generando PNG para compartir:', certificate.studentName);
 
+    // Importar dinámicamente para evitar bundling de módulos nativos en build time
+    const { generateSharePNG } = await import('@/lib/generateCertificateAssets');
+    
     // Generar PNG optimizado para redes sociales
     const pngBuffer = await generateSharePNG(certificate);
 
