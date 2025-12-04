@@ -117,6 +117,23 @@ export function getEmailShareLink(options: ShareOptions): string {
 }
 
 /**
+ * Genera link para compartir en LinkedIn
+ */
+export function getLinkedInShareLink(options: ShareOptions): string {
+  const text = encodeURIComponent(`¡Completé exitosamente el curso de ${options.courseName} en IT School! 🚀🎓\n\nValidá mi certificado:`);
+  const url = encodeURIComponent(options.validationUrl);
+  return `https://www.linkedin.com/sharing/share-offsite/?url=${url}`;
+}
+
+/**
+ * Genera link para compartir en X (Twitter)
+ */
+export function getXShareLink(options: ShareOptions): string {
+  const text = encodeURIComponent(`¡Completé el curso de ${options.courseName} en @itlovers 🚀🎓\n\nValidá mi certificado: ${options.validationUrl}`);
+  return `https://twitter.com/intent/tweet?text=${text}`;
+}
+
+/**
  * Descarga el PDF localmente
  */
 export async function downloadPdfLocally(

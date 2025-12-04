@@ -25,33 +25,9 @@ export default function ShareCertificateButton({
   const [showModal, setShowModal] = useState(false);
 
   const handleShare = async () => {
-    setSharing(true);
-
-    try {
-      const shareOptions: ShareOptions = {
-        certificateUrl,
-        studentName,
-        courseName,
-        validationUrl,
-      };
-
-      // Intentar usar Web Share API nativa
-      const sharedNatively = await shareWithNativeAPI(shareOptions);
-
-      if (sharedNatively) {
-        // Usuario compartió exitosamente o canceló
-        onShareComplete?.();
-      } else {
-        // No soporta Web Share API o falló, mostrar modal
-        setShowModal(true);
-      }
-    } catch (error) {
-      console.error('Error al compartir:', error);
-      // En caso de error, mostrar modal de fallback
-      setShowModal(true);
-    } finally {
-      setSharing(false);
-    }
+    // Mostrar siempre el modal personalizado con opciones de redes sociales
+    // El Web Share API nativo de Windows/navegadores no incluye redes sociales
+    setShowModal(true);
   };
 
   const handleModalClose = () => {
