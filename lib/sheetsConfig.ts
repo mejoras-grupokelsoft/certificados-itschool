@@ -164,16 +164,22 @@ async function certificateExistsInSheet(hash: string): Promise<boolean> {
  * @returns true si se guardó exitosamente, false si ya existía o hubo error
  */
 export async function saveCertificateToSheet(data: CertificateSheetData): Promise<boolean> {
+  console.log('📋 [Sheets] Intentando guardar certificado:', { hash: data.hash.slice(0, 10) + '...', studentName: data.studentName });
+  console.log('📋 [Sheets] Spreadsheet ID:', GOOGLE_SHEETS_SPREADSHEET_ID?.slice(0, 10) + '...');
+  
   try {
     // Verificar si ya existe
+    console.log('📋 [Sheets] Verificando si certificado ya existe...');
     const exists = await certificateExistsInSheet(data.hash);
     if (exists) {
       console.log('📋 Certificado ya existe en Sheets, no se duplica:', data.hash);
       return false;
     }
+    console.log('📋 [Sheets] Certificado no existe, procediendo a guardar...');
 
     // Obtener siguiente ID
     const nextId = await getNextCertificateId();
+    console.log('📋 [Sheets] Siguiente ID:', nextId);
 
     // Preparar fila
     const row = [

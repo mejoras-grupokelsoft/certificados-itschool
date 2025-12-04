@@ -7,6 +7,21 @@ import type { CertificateData } from './types';
 const BUILD_ID = `pdfGenerator-${new Date().toISOString()}-${Date.now()}`;
 const BUILD_TIMESTAMP = Date.now();
 
+/**
+ * Formatea una fecha de YYYY-MM-DD a "DD de Mes de YYYY"
+ */
+function formatDate(dateStr: string): string {
+  const months = [
+    'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
+    'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'
+  ];
+  
+  const [year, month, day] = dateStr.split('-');
+  const monthName = months[parseInt(month, 10) - 1] || 'Mes';
+  
+  return `${parseInt(day, 10)} de ${monthName} de ${year}`;
+}
+
 export async function generatePDF(certificateData: CertificateData): Promise<Buffer> {
   try {
     const DEPLOY_VERSION = 'v3.0-logs-2025-11-28';
@@ -187,6 +202,25 @@ export async function generatePDF(certificateData: CertificateData): Promise<Buf
       font: fontRegular,
       color: blueColor,
     });
+    
+    // 3.5 Fecha de emisión centrada y en negrita
+    const emissionDate = certificateData.completionDate || new Date().toISOString().split('T')[0];
+    // Formatear fecha: YYYY-MM-DD → DD de Mes de YYYY
+    const dateFormatted = formatDate(emissionDate);
+    const emissionText = `Fecha de emisión: ${dateFormatted}`;
+    const emissionFontSize = 14;
+    const emissionWidth = fontBold.widthOfTextAtSize(emissionText, emissionFontSize);
+    const emissionX = (width - emissionWidth) / 2; // Centrado
+    const emissionY = height - cmToPts(14.8); // Entre línea 2 y docente
+    
+    firstPage.drawText(emissionText, {
+      x: emissionX,
+      y: emissionY,
+      size: emissionFontSize,
+      font: fontBold,
+      color: blueColor,
+    });
+    console.log('📅 Fecha de emisión agregada:', { emissionText, emissionX, emissionY });
     
     // 4. Nombre del DOCENTE (dos líneas: "Docente" + nombre)
     const instructorFontSize = 11;

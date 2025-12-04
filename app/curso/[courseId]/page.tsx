@@ -302,8 +302,11 @@ export default function CursoPage() {
 
               <div className="p-8 space-y-6">
                 <div className="bg-indigo-50 border border-indigo-200 rounded-lg p-6">
-                  <p className="text-indigo-900 text-center font-medium mb-4">
+                  <p className="text-indigo-900 text-center font-medium mb-2">
                     Tu certificado ha sido generado exitosamente y ya está disponible para descarga
+                  </p>
+                  <p className="text-indigo-700 text-center text-sm">
+                    📧 También te enviaremos el certificado por email a <strong>{email}</strong>
                   </p>
                 </div>
                 <div className="space-y-4">

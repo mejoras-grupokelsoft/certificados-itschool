@@ -89,7 +89,7 @@ export default function ShareFallbackModal({
                 </svg>
               </div>
               <p className="text-gray-900 font-medium">¡Listo! ¿Compartir en más redes?</p>
-              <p className="text-xs text-gray-500 mt-1">Arrobanos en @itlovers</p>
+              <p className="text-xs text-gray-500 mt-1">Arrobanos en <a href="https://www.linkedin.com/company/itschool-educacion-it" target="_blank" rel="noopener noreferrer" className="text-[#0A66C2] hover:underline">ITSCHOOL - Educación IT</a></p>
             </div>
 
             {/* Íconos de redes sociales */}
@@ -287,9 +287,9 @@ export default function ShareFallbackModal({
             </button>
           </div>
 
-          {/* Footer con @itlovers */}
+          {/* Footer con LinkedIn */}
           <div className="px-5 py-3 bg-gray-50 text-center">
-            <p className="text-xs text-gray-500">¡Compartí y arrobanos! <span className="text-[#4285F4] font-medium">@itlovers</span></p>
+            <p className="text-xs text-gray-500">¡Compartí y arrobanos en <a href="https://www.linkedin.com/company/itschool-educacion-it" target="_blank" rel="noopener noreferrer" className="text-[#0A66C2] font-medium hover:underline">LinkedIn</a>!</p>
           </div>
         </div>
       </div>

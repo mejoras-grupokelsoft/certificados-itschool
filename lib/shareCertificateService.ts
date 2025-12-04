@@ -131,7 +131,7 @@ export function getLinkedInShareLink(options: ShareOptions): string {
  * Genera link para compartir en X (Twitter)
  */
 export function getXShareLink(options: ShareOptions): string {
-  const text = encodeURIComponent(`¡Completé el curso de ${options.courseName} en @itlovers 🚀🎓\n\nValidá mi certificado: ${options.validationUrl}`);
+  const text = encodeURIComponent(`¡Completé el curso de ${options.courseName} en @ITSchool_laPosta 🚀🎓\n\nValidá mi certificado: ${options.validationUrl}`);
   return `https://twitter.com/intent/tweet?text=${text}`;
 }
 
