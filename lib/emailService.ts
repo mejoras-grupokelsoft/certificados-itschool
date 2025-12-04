@@ -1,25 +1,20 @@
-import nodemailer from 'nodemailer';
+import { google } from 'googleapis';
 
 /**
- * Servicio de envío de emails para certificados
+ * Servicio de envío de emails para certificados usando Gmail API
  * 
- * Configura las siguientes variables de entorno:
- * - SMTP_HOST: Servidor SMTP (ej: smtp.gmail.com)
- * - SMTP_PORT: Puerto (ej: 587)
- * - SMTP_USER: Usuario/email de IT School
- * - SMTP_PASSWORD: Contraseña o App Password
- * - SMTP_FROM_NAME: Nombre del remitente (ej: "IT School")
- * - SMTP_FROM_EMAIL: Email del remitente
+ * Usa el mismo Service Account de Google Sheets con Domain-Wide Delegation
+ * 
+ * Variables de entorno necesarias:
+ * - GOOGLE_SERVICE_ACCOUNT_EMAIL: Email del Service Account
+ * - GOOGLE_PRIVATE_KEY: Private key del Service Account
+ * - GMAIL_SEND_AS: Email desde el cual enviar (ej: certificados@itschool.com.ar)
+ * - CARTA_COMPROMISO_URL: (opcional) URL al PDF de la carta compromiso
  */
 
-const SMTP_HOST = process.env.SMTP_HOST;
-const SMTP_PORT = parseInt(process.env.SMTP_PORT || '587', 10);
-const SMTP_USER = process.env.SMTP_USER;
-const SMTP_PASSWORD = process.env.SMTP_PASSWORD;
-const SMTP_FROM_NAME = process.env.SMTP_FROM_NAME || 'IT School';
-const SMTP_FROM_EMAIL = process.env.SMTP_FROM_EMAIL || SMTP_USER;
-
-// URL de la carta compromiso (PDF estático)
+const GOOGLE_SERVICE_ACCOUNT_EMAIL = process.env.GOOGLE_SERVICE_ACCOUNT_EMAIL;
+const GOOGLE_PRIVATE_KEY = process.env.GOOGLE_PRIVATE_KEY?.replace(/\\n/g, '\n');
+const GMAIL_SEND_AS = process.env.GMAIL_SEND_AS;
 const CARTA_COMPROMISO_URL = process.env.CARTA_COMPROMISO_URL || '';
 
 interface SendCertificateEmailOptions {
@@ -31,30 +26,29 @@ interface SendCertificateEmailOptions {
 }
 
 /**
- * Crea el transporter de Nodemailer
+ * Crea cliente de Gmail API con Domain-Wide Delegation
  */
-function createTransporter() {
-  if (!SMTP_HOST || !SMTP_USER || !SMTP_PASSWORD) {
-    console.warn('⚠️ Variables de entorno SMTP no configuradas. El envío de emails está deshabilitado.');
+function createGmailClient() {
+  if (!GOOGLE_SERVICE_ACCOUNT_EMAIL || !GOOGLE_PRIVATE_KEY || !GMAIL_SEND_AS) {
+    console.warn('⚠️ Variables de Gmail API no configuradas. El envío de emails está deshabilitado.');
     return null;
   }
 
-  return nodemailer.createTransport({
-    host: SMTP_HOST,
-    port: SMTP_PORT,
-    secure: SMTP_PORT === 465, // true para 465, false para otros puertos
-    auth: {
-      user: SMTP_USER,
-      pass: SMTP_PASSWORD,
-    },
+  const auth = new google.auth.JWT({
+    email: GOOGLE_SERVICE_ACCOUNT_EMAIL,
+    key: GOOGLE_PRIVATE_KEY,
+    scopes: ['https://www.googleapis.com/auth/gmail.send'],
+    subject: GMAIL_SEND_AS, // Impersonar este usuario
   });
+
+  return google.gmail({ version: 'v1', auth });
 }
 
 /**
  * Genera el HTML del email de certificado
  */
 function generateEmailHtml(options: SendCertificateEmailOptions): string {
-  const { studentName, courseName, validationUrl } = options;
+  const { courseName, validationUrl } = options;
   
   return `
 <!DOCTYPE html>
@@ -164,8 +158,9 @@ function generateEmailHtml(options: SendCertificateEmailOptions): string {
           © ${new Date().getFullYear()} IT School - Instituto de Tecnología y Desarrollo de Software
         </p>
         <p style="margin: 10px 0 0 0;">
-          <a href="https://www.instagram.com/itlovers" style="color: #aaa; margin: 0 10px; text-decoration: none;">Instagram</a>
-          <a href="https://www.tiktok.com/@itlovers" style="color: #aaa; margin: 0 10px; text-decoration: none;">TikTok</a>
+          <a href="https://www.instagram.com/itschool_laposta" style="color: #aaa; margin: 0 10px; text-decoration: none;">Instagram</a>
+          <a href="https://www.tiktok.com/@itschool.laposta" style="color: #aaa; margin: 0 10px; text-decoration: none;">TikTok</a>
+          <a href="https://www.linkedin.com/company/itschool-educacion-it" style="color: #aaa; margin: 0 10px; text-decoration: none;">LinkedIn</a>
           <a href="https://www.itschool.com.ar" style="color: #aaa; margin: 0 10px; text-decoration: none;">Web</a>
         </p>
       </td>
@@ -189,15 +184,62 @@ async function downloadFile(url: string): Promise<Buffer> {
 }
 
 /**
- * Envía el email de certificado al estudiante
+ * Convierte contenido a base64 URL-safe para Gmail API
+ */
+function encodeBase64Url(data: string | Buffer): string {
+  const base64 = Buffer.from(data).toString('base64');
+  return base64.replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+}
+
+/**
+ * Crea un email MIME con adjuntos
+ */
+function createMimeMessage(
+  to: string,
+  from: string,
+  subject: string,
+  htmlBody: string,
+  attachments: { filename: string; content: Buffer; contentType: string }[]
+): string {
+  const boundary = `boundary_${Date.now()}_${Math.random().toString(36).substr(2)}`;
+  
+  let message = '';
+  message += `From: "IT School" <${from}>\r\n`;
+  message += `To: ${to}\r\n`;
+  message += `Subject: =?UTF-8?B?${Buffer.from(subject).toString('base64')}?=\r\n`;
+  message += 'MIME-Version: 1.0\r\n';
+  message += `Content-Type: multipart/mixed; boundary="${boundary}"\r\n\r\n`;
+  
+  // HTML body
+  message += `--${boundary}\r\n`;
+  message += 'Content-Type: text/html; charset=UTF-8\r\n';
+  message += 'Content-Transfer-Encoding: base64\r\n\r\n';
+  message += Buffer.from(htmlBody).toString('base64') + '\r\n\r\n';
+  
+  // Attachments
+  for (const attachment of attachments) {
+    message += `--${boundary}\r\n`;
+    message += `Content-Type: ${attachment.contentType}; name="${attachment.filename}"\r\n`;
+    message += 'Content-Transfer-Encoding: base64\r\n';
+    message += `Content-Disposition: attachment; filename="${attachment.filename}"\r\n\r\n`;
+    message += attachment.content.toString('base64') + '\r\n\r\n';
+  }
+  
+  message += `--${boundary}--`;
+  
+  return message;
+}
+
+/**
+ * Envía el email de certificado al estudiante usando Gmail API
  * 
- * @returns true si se envió correctamente, false si hubo error o SMTP no configurado
+ * @returns true si se envió correctamente, false si hubo error
  */
 export async function sendCertificateEmail(options: SendCertificateEmailOptions): Promise<boolean> {
-  const transporter = createTransporter();
+  const gmail = createGmailClient();
   
-  if (!transporter) {
-    console.log('📧 Envío de email deshabilitado (SMTP no configurado)');
+  if (!gmail) {
+    console.log('📧 Envío de email deshabilitado (Gmail API no configurado)');
     return false;
   }
 
@@ -209,9 +251,9 @@ export async function sendCertificateEmail(options: SendCertificateEmailOptions)
     console.log('📄 Certificado PDF descargado:', certificatePdf.length, 'bytes');
 
     // Preparar adjuntos
-    const attachments: nodemailer.Attachment[] = [
+    const attachments: { filename: string; content: Buffer; contentType: string }[] = [
       {
-        filename: `Certificado-${options.courseName.replace(/\s+/g, '-')}-${options.studentName.replace(/\s+/g, '-')}.pdf`,
+        filename: `Certificado-${options.courseName.replace(/[^a-zA-Z0-9]/g, '-')}-${options.studentName.replace(/[^a-zA-Z0-9]/g, '-')}.pdf`,
         content: certificatePdf,
         contentType: 'application/pdf',
       },
@@ -232,16 +274,24 @@ export async function sendCertificateEmail(options: SendCertificateEmailOptions)
       }
     }
 
-    // Enviar email
-    const info = await transporter.sendMail({
-      from: `"${SMTP_FROM_NAME}" <${SMTP_FROM_EMAIL}>`,
-      to: options.to,
-      subject: `🎓 Tu certificado de ${options.courseName} - IT School`,
-      html: generateEmailHtml(options),
-      attachments,
+    // Crear mensaje MIME
+    const mimeMessage = createMimeMessage(
+      options.to,
+      GMAIL_SEND_AS!,
+      `🎓 Tu certificado de ${options.courseName} - IT School`,
+      generateEmailHtml(options),
+      attachments
+    );
+
+    // Enviar email usando Gmail API
+    const result = await gmail.users.messages.send({
+      userId: 'me',
+      requestBody: {
+        raw: encodeBase64Url(mimeMessage),
+      },
     });
 
-    console.log('✅ Email enviado:', info.messageId);
+    console.log('✅ Email enviado via Gmail API:', result.data.id);
     return true;
   } catch (error) {
     console.error('❌ Error enviando email:', error);
@@ -253,5 +303,5 @@ export async function sendCertificateEmail(options: SendCertificateEmailOptions)
  * Verifica si el servicio de email está configurado
  */
 export function isEmailServiceEnabled(): boolean {
-  return !!(SMTP_HOST && SMTP_USER && SMTP_PASSWORD);
+  return !!(GOOGLE_SERVICE_ACCOUNT_EMAIL && GOOGLE_PRIVATE_KEY && GMAIL_SEND_AS);
 }
