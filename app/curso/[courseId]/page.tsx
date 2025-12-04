@@ -367,7 +367,6 @@ export default function CursoPage() {
                       setValidationUrl(null);
                       setHasShared(false);
                       setCourseName('');
-                      setShowShareOptions(false);
                     }}
                     className="block w-full bg-gray-200 text-gray-700 text-center px-6 py-4 rounded-lg font-semibold hover:bg-gray-300 transition-colors"
                   >
