@@ -1,10 +1,15 @@
 /**
  * Endpoint para generar imagen Open Graph del certificado
  * Esto permite que LinkedIn/Facebook/Twitter muestren una preview del certificado
+ * 
+ * Genera un SVG que se convierte a PNG mediante una librería
  */
 
 import { NextRequest, NextResponse } from 'next/server';
 import { getCertificate } from '@/lib/certificateStorage';
+import { ImageResponse } from 'next/og';
+
+export const runtime = 'edge';
 
 export async function GET(
   request: NextRequest,
@@ -20,77 +25,110 @@ export async function GET(
       return new NextResponse('Certificate not found', { status: 404 });
     }
 
-    // Generar HTML para la imagen OG
-    const html = `
-      <!DOCTYPE html>
-      <html>
-        <head>
-          <style>
-            * { margin: 0; padding: 0; box-sizing: border-box; }
-            body {
-              width: 1200px;
-              height: 630px;
-              background: linear-gradient(135deg, #4285F4 0%, #393185 100%);
-              display: flex;
-              align-items: center;
-              justify-content: center;
-              font-family: Arial, sans-serif;
-              color: white;
-              padding: 60px;
-            }
-            .container {
-              text-align: center;
-              background: rgba(255, 255, 255, 0.1);
-              padding: 60px;
-              border-radius: 20px;
-              backdrop-filter: blur(10px);
-            }
-            .logo {
-              font-size: 48px;
-              font-weight: bold;
-              margin-bottom: 30px;
-              color: white;
-            }
-            .title {
-              font-size: 36px;
-              font-weight: bold;
-              margin-bottom: 20px;
-            }
-            .student {
-              font-size: 52px;
-              font-weight: bold;
-              margin: 30px 0;
-              text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
-            }
-            .course {
-              font-size: 40px;
-              margin: 20px 0;
-              color: #FFE57F;
-            }
-            .verified {
-              font-size: 28px;
-              margin-top: 30px;
-              opacity: 0.9;
-            }
-          </style>
-        </head>
-        <body>
-          <div class="container">
-            <div class="logo">🚀 IT SCHOOL</div>
-            <div class="title">Certificado Verificado</div>
-            <div class="student">${certificate.studentName}</div>
-            <div class="course">${certificate.courseName}</div>
-            <div class="verified">✓ Certificado Auténtico</div>
-          </div>
-        </body>
-      </html>
-    `;
+    // Generar imagen OG usando next/og
+    return new ImageResponse(
+      (
+        <div
+          style={{
+            width: '100%',
+            height: '100%',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            background: 'linear-gradient(135deg, #4285F4 0%, #393185 100%)',
+            fontFamily: 'Arial, sans-serif',
+            padding: '60px',
+          }}
+        >
+          <div
+            style={{
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              textAlign: 'center',
+              background: 'rgba(255, 255, 255, 0.15)',
+              padding: '50px 80px',
+              borderRadius: '24px',
+              border: '2px solid rgba(255, 255, 255, 0.2)',
+            }}
+          >
+            {/* Logo */}
+            <div
+              style={{
+                fontSize: '42px',
+                fontWeight: 'bold',
+                color: 'white',
+                marginBottom: '20px',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '12px',
+              }}
+            >
+              <span>🚀</span>
+              <span>IT SCHOOL</span>
+            </div>
 
-    return new NextResponse(html, {
-      headers: {
-        'Content-Type': 'text/html',
-      },
-    });
+            {/* Certificado Verificado */}
+            <div
+              style={{
+                fontSize: '28px',
+                fontWeight: 'bold',
+                color: 'rgba(255, 255, 255, 0.9)',
+                marginBottom: '30px',
+              }}
+            >
+              CERTIFICADO VERIFICADO
+            </div>
+
+            {/* Nombre del estudiante */}
+            <div
+              style={{
+                fontSize: '48px',
+                fontWeight: 'bold',
+                color: 'white',
+                marginBottom: '20px',
+                textShadow: '2px 2px 4px rgba(0,0,0,0.2)',
+              }}
+            >
+              {certificate.studentName}
+            </div>
+
+            {/* Curso */}
+            <div
+              style={{
+                fontSize: '32px',
+                color: '#FFE57F',
+                marginBottom: '30px',
+                maxWidth: '900px',
+              }}
+            >
+              {certificate.courseName}
+            </div>
+
+            {/* Check de verificación */}
+            <div
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '8px',
+                fontSize: '24px',
+                color: '#34A853',
+                background: 'rgba(255, 255, 255, 0.9)',
+                padding: '10px 24px',
+                borderRadius: '50px',
+              }}
+            >
+              <span>✓</span>
+              <span style={{ color: '#333' }}>Certificado Auténtico</span>
+            </div>
+          </div>
+        </div>
+      ),
+      {
+        width: 1200,
+        height: 630,
+      }
+    );
   } catch (error) {
     console.error('Error generating OG image:', error);
     return new NextResponse('Error generating image', { status: 500 });

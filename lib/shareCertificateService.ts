@@ -118,9 +118,11 @@ export function getEmailShareLink(options: ShareOptions): string {
 
 /**
  * Genera link para compartir en LinkedIn
+ * LinkedIn solo permite compartir URL, el texto se genera desde los meta tags OG de la página
  */
 export function getLinkedInShareLink(options: ShareOptions): string {
-  const text = encodeURIComponent(`¡Completé exitosamente el curso de ${options.courseName} en IT School! 🚀🎓\n\nValidá mi certificado:`);
+  // LinkedIn usa los meta tags Open Graph de la URL compartida
+  // Asegurarse de que validationUrl tenga buenos meta tags OG
   const url = encodeURIComponent(options.validationUrl);
   return `https://www.linkedin.com/sharing/share-offsite/?url=${url}`;
 }
