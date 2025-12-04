@@ -2,7 +2,6 @@
 
 import { useState } from 'react';
 import ShareFallbackModal from './ShareFallbackModal';
-import { shareWithNativeAPI, detectShareCapabilities, type ShareOptions } from '@/lib/shareCertificateService';
 
 interface ShareCertificateButtonProps {
   certificateUrl: string;
@@ -11,6 +10,7 @@ interface ShareCertificateButtonProps {
   validationUrl: string;
   onShareComplete?: () => void;
   className?: string;
+  compact?: boolean; // Modo compacto para botón pequeño
 }
 
 export default function ShareCertificateButton({
@@ -20,6 +20,7 @@ export default function ShareCertificateButton({
   validationUrl,
   onShareComplete,
   className = '',
+  compact = false,
 }: ShareCertificateButtonProps) {
   const [sharing, setSharing] = useState(false);
   const [showModal, setShowModal] = useState(false);
@@ -34,6 +35,33 @@ export default function ShareCertificateButton({
     setShowModal(false);
     onShareComplete?.();
   };
+
+  // Versión compacta del botón
+  if (compact) {
+    return (
+      <>
+        <button
+          onClick={handleShare}
+          disabled={sharing}
+          className={`flex items-center gap-2 ${className}`}
+        >
+          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z" />
+          </svg>
+          <span>Volver a compartir</span>
+        </button>
+
+        <ShareFallbackModal
+          isOpen={showModal}
+          onClose={handleModalClose}
+          certificateUrl={certificateUrl}
+          studentName={studentName}
+          courseName={courseName}
+          validationUrl={validationUrl}
+        />
+      </>
+    );
+  }
 
   return (
     <>

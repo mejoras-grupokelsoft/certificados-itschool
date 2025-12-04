@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { saveCertificate, generateCertificateToken, getCertificate } from '@/lib/certificateStorage';
+import { saveCertificateToSheet } from '@/lib/sheetsConfig';
+import { sendCertificateEmail, isEmailServiceEnabled } from '@/lib/emailService';
 import type { CertificateData, CertificateResponse } from '@/lib/types';
 
 /**
@@ -93,12 +95,44 @@ export async function POST(request: NextRequest) {
 
     console.log('✅ Certificado guardado con token:', token);
 
+    // Guardar en Google Sheets (nueva hoja "Certificados")
+    try {
+      await saveCertificateToSheet({
+        hash: token,
+        studentName,
+        studentEmail,
+        courseName,
+      });
+    } catch (sheetError) {
+      console.error('⚠️ Error guardando en Sheets (no crítico):', sheetError);
+      // No fallar si Sheets falla, el certificado ya está en Redis
+    }
+
+    // Enviar email con certificado (async, no bloquea respuesta)
+    const certificateUrl = `${BASE_URL}/api/certificate/${token}`;
+    if (isEmailServiceEnabled()) {
+      // Ejecutar en background sin await para no bloquear
+      sendCertificateEmail({
+        to: studentEmail,
+        studentName,
+        courseName,
+        certificatePdfUrl: certificateUrl,
+        validationUrl: certificateData.validationUrl,
+      }).then(sent => {
+        if (sent) {
+          console.log('📧 Email enviado exitosamente a:', studentEmail);
+        }
+      }).catch(emailError => {
+        console.error('⚠️ Error enviando email (no crítico):', emailError);
+      });
+    }
+
     // Retornar URLs
     return NextResponse.json(
       {
         success: true,
         message: 'Certificado generado exitosamente',
-        certificateUrl: `${BASE_URL}/api/certificate/${token}`,
+        certificateUrl,
         token,
         validationUrl: certificateData.validationUrl,
       } as CertificateResponse,
