@@ -7,7 +7,8 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "test:certificates": "cross-env DOTENV_CONFIG_PATH=.env.local tsx -r dotenv/config scripts/test-certificates.ts"
+    "test:certificates": "cross-env DOTENV_CONFIG_PATH=.env.local tsx -r dotenv/config scripts/test-certificates.ts",
+    "extract:emails": "tsx scripts/extract-emails.ts"
   },
   "dependencies": {
     "@netlify/plugin-nextjs": "^5.14.7",
