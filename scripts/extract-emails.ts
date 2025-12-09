@@ -266,9 +266,9 @@ function fixUTF8Encoding(text: string): string {
   // Arreglar caracteres UTF-8 mal decodificados (común en emails)
   const replacements: { [key: string]: string } = {
     'Ã¡': 'á', 'Ã©': 'é', 'Ã­': 'í', 'Ã³': 'ó', 'Ãº': 'ú',
-    'Ã': 'Á', 'Ã': 'É', 'Ã': 'Í', 'Ã': 'Ó', 'Ã': 'Ú',
-    'Ã±': 'ñ', 'Ã': 'Ñ',
-    'Ã¼': 'ü', 'Ã': 'Ü',
+    'Ã\x81': 'Á', 'Ã\x89': 'É', 'Ã\x8d': 'Í', 'Ã\x93': 'Ó', 'Ã\x9a': 'Ú',
+    'Ã±': 'ñ', 'Ã\x91': 'Ñ',
+    'Ã¼': 'ü', 'Ã\x9c': 'Ü',
     'Â¿': '¿', 'Â¡': '¡',
     'Â': '', // Remover caracteres Â solos (basura de codificación)
   };
