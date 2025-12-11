@@ -27,6 +27,9 @@ export default function CursoPage() {
   const [hasShared, setHasShared] = useState(false);
   const [courseName, setCourseName] = useState<string>('');
   const [certificateToken, setCertificateToken] = useState<string | null>(null);
+  const [isExistingCertificate, setIsExistingCertificate] = useState(false);
+  const [resendingEmail, setResendingEmail] = useState(false);
+  const [emailResent, setEmailResent] = useState(false);
 
   const handleDownloadPdf = async (e?: React.MouseEvent) => {
     // Prevenir navegación del navegador
@@ -73,6 +76,32 @@ export default function CursoPage() {
       window.open(certificateUrl, '_blank');
     } finally {
       setDownloadingPdf(false);
+    }
+  };
+
+  const handleResendEmail = async () => {
+    if (!certificateToken || resendingEmail || emailResent) return;
+    
+    setResendingEmail(true);
+    try {
+      const response = await fetch('/api/certificate/resend', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ token: certificateToken }),
+      });
+
+      const data = await response.json();
+
+      if (response.ok && data.success) {
+        setEmailResent(true);
+      } else {
+        alert(data.message || 'Error al reenviar el email. Intente nuevamente.');
+      }
+    } catch (error) {
+      console.error('Error reenviando email:', error);
+      alert('Error de conexión. Intente nuevamente.');
+    } finally {
+      setResendingEmail(false);
     }
   };
 
@@ -140,6 +169,8 @@ export default function CursoPage() {
       setValidationUrl(certificateData.validationUrl);
       setCertificateToken(certificateData.token);
       setCourseName(validateData.courseName);
+      setIsExistingCertificate(certificateData.existing === true);
+      setEmailResent(false); // Reset para permitir reenvío
       setStep('success');
     } catch (err) {
       setError('Error de conexión. Intente nuevamente.');
@@ -303,12 +334,57 @@ export default function CursoPage() {
               <div className="p-8 space-y-6">
                 <div className="bg-indigo-50 border border-indigo-200 rounded-lg p-6">
                   <p className="text-indigo-900 text-center font-medium mb-2">
-                    Tu certificado ha sido generado exitosamente y ya está disponible para descarga
+                    {isExistingCertificate 
+                      ? 'Tu certificado ya había sido generado anteriormente y está disponible para descarga'
+                      : 'Tu certificado ha sido generado exitosamente y ya está disponible para descarga'
+                    }
                   </p>
                   <p className="text-indigo-700 text-center text-sm">
-                    📧 También te enviaremos el certificado por email a <strong>{email}</strong>
+                    {isExistingCertificate
+                      ? '📧 El email se envió cuando generaste el certificado por primera vez'
+                      : `📧 También te enviaremos el certificado por email a ${email}`
+                    }
                   </p>
                 </div>
+
+                {/* Botón de reenvío de email - solo para certificados existentes */}
+                {isExistingCertificate && (
+                  <div className="bg-amber-50 border border-amber-200 rounded-lg p-4">
+                    {emailResent ? (
+                      <div className="text-center">
+                        <p className="text-green-700 font-medium">✅ Email reenviado exitosamente</p>
+                        <p className="text-green-600 text-sm mt-1">Revisá tu casilla de correo ({email})</p>
+                      </div>
+                    ) : (
+                      <div className="flex flex-col sm:flex-row items-center justify-between gap-3">
+                        <p className="text-amber-800 text-sm">
+                          ¿No recibiste el email? Podés reenviarlo:
+                        </p>
+                        <button
+                          type="button"
+                          onClick={handleResendEmail}
+                          disabled={resendingEmail}
+                          className="flex items-center gap-2 px-4 py-2 bg-amber-600 text-white rounded-lg font-medium hover:bg-amber-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap"
+                        >
+                          {resendingEmail ? (
+                            <>
+                              <svg className="animate-spin h-4 w-4" fill="none" viewBox="0 0 24 24">
+                                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                              </svg>
+                              Enviando...
+                            </>
+                          ) : (
+                            <>
+                              📧 Reenviar certificado
+                            </>
+                          )}
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                )}
+
                 <div className="space-y-4">
                   {/* Botón de compartir certificado */}
                   {!hasShared && (
@@ -380,6 +456,8 @@ export default function CursoPage() {
                       setValidationUrl(null);
                       setHasShared(false);
                       setCourseName('');
+                      setIsExistingCertificate(false);
+                      setEmailResent(false);
                     }}
                     className="block w-full bg-gray-200 text-gray-700 text-center px-6 py-4 rounded-lg font-semibold hover:bg-gray-300 transition-colors"
                   >
