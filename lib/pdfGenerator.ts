@@ -185,8 +185,11 @@ export async function generatePDF(certificateData: CertificateData): Promise<Buf
     });
     
     const studentNameWidth = fontBold.widthOfTextAtSize(studentName, textFontSize);
+    // Agregar espacio explícito entre el nombre y el texto siguiente (8pts = ~3mm)
+    const extraSpace = 5;
+    console.log('📐 PDF SPACING - studentNameWidth:', studentNameWidth, 'extraSpace:', extraSpace);
     firstPage.drawText(afterName, {
-      x: xText + beforeNameWidth + studentNameWidth,
+      x: xText + beforeNameWidth + studentNameWidth + extraSpace,
       y: line1Y,
       size: textFontSize,
       font: fontRegular,
