@@ -56,14 +56,14 @@ function generateEmailHtml(options: SendCertificateEmailOptions): string {
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Tu certificado de IT School</title>
+  <title>Tu certificado de ITSCHOOL</title>
 </head>
 <body style="margin: 0; padding: 0; font-family: Arial, sans-serif; background-color: #f5f5f5;">
   <table width="100%" cellpadding="0" cellspacing="0" style="max-width: 600px; margin: 0 auto; background-color: #ffffff;">
     <!-- Header -->
     <tr>
       <td style="background: linear-gradient(135deg, #4285F4 0%, #393185 100%); padding: 30px; text-align: center;">
-        <h1 style="color: #ffffff; margin: 0; font-size: 28px;">🚀 IT SCHOOL</h1>
+        <h1 style="color: #ffffff; margin: 0; font-size: 28px;">🚀 ITSCHOOL</h1>
       </td>
     </tr>
     
@@ -80,7 +80,7 @@ function generateEmailHtml(options: SendCertificateEmailOptions): string {
         </p>
         
         <p style="font-size: 16px; color: #555; line-height: 1.6; margin-bottom: 20px;">
-          Adjunto encontrarás una <strong>carta de compromiso de IT School</strong> 🎓, donde te invitamos a participar 
+          Adjunto encontrarás una <strong>carta de compromiso de ITSCHOOL</strong> 🎓, donde te invitamos a participar 
           en diversas actividades para ayudar a promover nuestra propuesta educativa y contribuir al éxito de nuestros estudiantes.
         </p>
         
@@ -134,7 +134,7 @@ function generateEmailHtml(options: SendCertificateEmailOptions): string {
         
         <p style="font-size: 16px; color: #555; line-height: 1.6; margin-top: 30px;">
           Atentamente,<br>
-          <strong style="color: #4285F4;">IT School</strong>
+          <strong style="color: #4285F4;">ITSCHOOL</strong>
         </p>
       </td>
     </tr>
@@ -154,9 +154,6 @@ function generateEmailHtml(options: SendCertificateEmailOptions): string {
     <!-- Footer -->
     <tr>
       <td style="padding: 25px 30px; background-color: #333; text-align: center;">
-        <p style="color: #aaa; font-size: 12px; margin: 0;">
-          © ${new Date().getFullYear()} IT School - Instituto de Tecnología y Desarrollo de Software
-        </p>
         <p style="margin: 10px 0 0 0;">
           <a href="https://www.instagram.com/itschool_laposta" style="color: #aaa; margin: 0 10px; text-decoration: none;">Instagram</a>
           <a href="https://www.tiktok.com/@itschool.laposta" style="color: #aaa; margin: 0 10px; text-decoration: none;">TikTok</a>
@@ -204,7 +201,7 @@ function createMimeMessage(
   const boundary = `boundary_${Date.now()}_${Math.random().toString(36).substr(2)}`;
   
   let message = '';
-  message += `From: "IT School" <${from}>\r\n`;
+  message += `From: "ITSCHOOL" <${from}>\r\n`;
   message += `To: ${to}\r\n`;
   message += `Subject: =?UTF-8?B?${Buffer.from(subject).toString('base64')}?=\r\n`;
   message += 'MIME-Version: 1.0\r\n';
@@ -278,7 +275,7 @@ export async function sendCertificateEmail(options: SendCertificateEmailOptions)
     const mimeMessage = createMimeMessage(
       options.to,
       GMAIL_SEND_AS!,
-      `🎓 Tu certificado de ${options.courseName} - IT School`,
+      `🎓 Tu certificado de ${options.courseName} - ITSCHOOL`,
       generateEmailHtml(options),
       attachments
     );

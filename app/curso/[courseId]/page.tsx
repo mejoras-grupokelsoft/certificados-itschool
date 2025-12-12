@@ -30,6 +30,27 @@ export default function CursoPage() {
   const [isExistingCertificate, setIsExistingCertificate] = useState(false);
   const [resendingEmail, setResendingEmail] = useState(false);
   const [emailResent, setEmailResent] = useState(false);
+  const [alreadyDownloadedBefore, setAlreadyDownloadedBefore] = useState(false); // Si ya compartió/descargó antes, no pedir compartir
+
+  // Marcar certificado como compartido (desbloquea futuras descargas sin compartir)
+  const handleShareComplete = async () => {
+    setHasShared(true);
+    
+    // Marcar en el servidor para que persista entre recargas
+    if (certificateToken && !alreadyDownloadedBefore) {
+      try {
+        await fetch('/api/certificate/mark-downloaded', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ token: certificateToken }),
+        });
+        setAlreadyDownloadedBefore(true);
+      } catch (markError) {
+        console.warn('No se pudo marcar como compartido:', markError);
+        // No es crítico, el usuario ya puede descargar en esta sesión
+      }
+    }
+  };
 
   const handleDownloadPdf = async (e?: React.MouseEvent) => {
     // Prevenir navegación del navegador
@@ -171,6 +192,14 @@ export default function CursoPage() {
       setCourseName(validateData.courseName);
       setIsExistingCertificate(certificateData.existing === true);
       setEmailResent(false); // Reset para permitir reenvío
+      
+      // Si ya fue descargado antes, permitir descarga sin compartir
+      const wasDownloadedBefore = certificateData.hasBeenDownloaded === true;
+      setAlreadyDownloadedBefore(wasDownloadedBefore);
+      if (wasDownloadedBefore) {
+        setHasShared(true); // Skip share requirement
+      }
+      
       setStep('success');
     } catch (err) {
       setError('Error de conexión. Intente nuevamente.');
@@ -401,7 +430,7 @@ export default function CursoPage() {
                         studentName={fullName}
                         courseName={courseName}
                         validationUrl={validationUrl}
-                        onShareComplete={() => setHasShared(true)}
+                        onShareComplete={handleShareComplete}
                         className="w-full bg-gradient-to-r from-[#4285F4] to-[#393185] text-white"
                       />
                     </div>
@@ -409,8 +438,17 @@ export default function CursoPage() {
 
                   {hasShared && (
                     <div className="bg-gradient-to-r from-green-50 to-emerald-50 border-2 border-green-200 rounded-lg p-4 mb-4 text-center">
-                      <p className="text-green-800 font-bold text-lg">✓ ¡Gracias por compartir tu logro!</p>
-                      <p className="text-green-700 text-sm mt-1">Ahora podés descargar tu certificado en PDF</p>
+                      {alreadyDownloadedBefore ? (
+                        <>
+                          <p className="text-green-800 font-bold text-lg">✓ Ya compartiste tu logro anteriormente</p>
+                          <p className="text-green-700 text-sm mt-1">Podés descargar tu certificado cuando quieras</p>
+                        </>
+                      ) : (
+                        <>
+                          <p className="text-green-800 font-bold text-lg">✓ ¡Gracias por compartir tu logro!</p>
+                          <p className="text-green-700 text-sm mt-1">Ahora podés descargar tu certificado en PDF</p>
+                        </>
+                      )}
                       {/* Botón para volver a compartir */}
                       <ShareCertificateButton
                         certificateUrl={certificateUrl}
@@ -458,6 +496,7 @@ export default function CursoPage() {
                       setCourseName('');
                       setIsExistingCertificate(false);
                       setEmailResent(false);
+                      setAlreadyDownloadedBefore(false);
                     }}
                     className="block w-full bg-gray-200 text-gray-700 text-center px-6 py-4 rounded-lg font-semibold hover:bg-gray-300 transition-colors"
                   >

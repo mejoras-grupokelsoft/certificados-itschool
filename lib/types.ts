@@ -37,6 +37,8 @@ export interface CertificateData {
   validationUrl: string;
   generatedAt: string;
   issueDate?: string; // Deprecated - use generatedAt instead
+  hasBeenDownloaded?: boolean; // True after first successful download (unlocks future downloads without sharing)
+  firstDownloadAt?: string; // ISO timestamp of first download
 }
 
 // Tipos para la respuesta de validación
@@ -57,6 +59,8 @@ export interface CertificateResponse {
   certificateUrl?: string;
   token?: string;
   validationUrl?: string;
+  existing?: boolean;
+  hasBeenDownloaded?: boolean; // True if certificate was already downloaded before
 }
 
 // Tipos para Canvas GraphQL API

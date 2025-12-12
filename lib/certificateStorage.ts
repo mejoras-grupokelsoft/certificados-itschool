@@ -77,3 +77,30 @@ export async function deleteCertificate(token: string): Promise<boolean> {
   const deleted = await redis.del(key);
   return deleted === 1;
 }
+
+/**
+ * Actualiza campos específicos de un certificado existente
+ */
+export async function updateCertificate(
+  token: string,
+  updates: Partial<CertificateData>
+): Promise<boolean> {
+  const existing = await getCertificate(token);
+  if (!existing) {
+    return false;
+  }
+  
+  const updated = { ...existing, ...updates };
+  await saveCertificate(token, updated);
+  return true;
+}
+
+/**
+ * Marca un certificado como descargado (desbloquea descargas futuras sin compartir)
+ */
+export async function markCertificateAsDownloaded(token: string): Promise<boolean> {
+  return updateCertificate(token, {
+    hasBeenDownloaded: true,
+    firstDownloadAt: new Date().toISOString()
+  });
+}

@@ -70,6 +70,7 @@ export async function POST(request: NextRequest) {
           token,
           validationUrl: `${BASE_URL}/validar/${token}`,
           existing: true,
+          hasBeenDownloaded: existingCertificate.hasBeenDownloaded || false,
         } as CertificateResponse,
         { status: 200 }
       );
