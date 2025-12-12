@@ -106,9 +106,9 @@ export async function validateStudentInCourse(
     
     console.log(`📊 Total enrollments encontrados: ${allEnrollments.length}`);
     
-    // Buscar el estudiante por email
+    // Buscar el estudiante por email (validando que el email exista)
     const enrollment = allEnrollments.find(
-      (e) => e.user.email.toLowerCase() === studentEmail.toLowerCase()
+      (e) => e.user.email && e.user.email.toLowerCase() === studentEmail.toLowerCase()
     );
     
     if (!enrollment) {
