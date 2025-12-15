@@ -6,6 +6,20 @@ import Link from 'next/link';
 import ShareCertificateButton from '@/app/components/ShareCertificateButton';
 
 /**
+ * Capitaliza la primera letra de cada palabra en un nombre
+ * Convierte "juan pérez" → "Juan Pérez"
+ * Maneja múltiples espacios y nombres compuestos
+ */
+function capitalizeFullName(name: string): string {
+  return name
+    .toLowerCase()
+    .split(' ')
+    .filter(word => word.length > 0) // Eliminar espacios extras
+    .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+    .join(' ');
+}
+
+/**
  * Página principal para generar certificados por curso
  * URL: /curso/[courseId]
  * 
@@ -247,6 +261,7 @@ export default function CursoPage() {
                     id="fullName"
                     value={fullName}
                     onChange={(e) => setFullName(e.target.value)}
+                    onBlur={(e) => setFullName(capitalizeFullName(e.target.value))}
                     className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent text-gray-900 text-lg"
                     placeholder="Juan Pérez"
                     required
