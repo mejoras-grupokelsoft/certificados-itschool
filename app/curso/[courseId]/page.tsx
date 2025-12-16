@@ -447,6 +447,8 @@ export default function CursoPage() {
                         validationUrl={validationUrl}
                         onShareComplete={handleShareComplete}
                         className="w-full bg-gradient-to-r from-[#4285F4] to-[#393185] text-white"
+                        token={certificateToken || undefined}
+                        generatedAt={new Date().toISOString()}
                       />
                     </div>
                   )}
@@ -473,6 +475,8 @@ export default function CursoPage() {
                         onShareComplete={() => {}}
                         className="mt-3 inline-flex items-center gap-2 px-4 py-2 bg-white border border-green-300 text-green-700 rounded-lg text-sm hover:bg-green-50 transition-colors"
                         compact={true}
+                        token={certificateToken || undefined}
+                        generatedAt={new Date().toISOString()}
                       />
                     </div>
                   )}

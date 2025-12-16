@@ -128,6 +128,68 @@ export function getLinkedInShareLink(options: ShareOptions): string {
 }
 
 /**
+ * Opciones para agregar certificación a LinkedIn
+ */
+export interface LinkedInCertificationOptions {
+  certificateName: string;      // Nombre del curso/certificación
+  organizationName: string;     // "IT School" o "ITSCHOOL"
+  issueMonth: number;           // Mes de emisión (1-12)
+  issueYear: number;            // Año de emisión
+  expirationMonth?: number;     // Mes de expiración (opcional, certificados permanentes)
+  expirationYear?: number;      // Año de expiración (opcional)
+  certificationUrl: string;     // URL de validación del certificado
+  certificationId: string;      // Token/ID del certificado (últimos 16 caracteres)
+}
+
+/**
+ * Genera link para agregar certificación directamente al perfil de LinkedIn
+ * Esto abre LinkedIn en la sección de agregar certificación con los campos pre-llenados
+ * 
+ * @see https://www.linkedin.com/help/linkedin/answer/a704787
+ */
+export function getLinkedInAddCertificationLink(options: LinkedInCertificationOptions): string {
+  const params = new URLSearchParams();
+  
+  // Parámetros requeridos
+  params.append('startTask', 'CERTIFICATION_NAME');
+  params.append('name', options.certificateName);
+  params.append('organizationName', options.organizationName);
+  params.append('issueYear', options.issueYear.toString());
+  params.append('issueMonth', options.issueMonth.toString());
+  params.append('certUrl', options.certificationUrl);
+  params.append('certId', options.certificationId);
+  
+  // Parámetros opcionales (expiración)
+  if (options.expirationYear && options.expirationMonth) {
+    params.append('expirationYear', options.expirationYear.toString());
+    params.append('expirationMonth', options.expirationMonth.toString());
+  }
+  
+  return `https://www.linkedin.com/profile/add?${params.toString()}`;
+}
+
+/**
+ * Genera las opciones de LinkedIn desde los datos de ShareOptions
+ */
+export function buildLinkedInCertificationOptions(
+  options: ShareOptions,
+  generatedAt: string,
+  token: string
+): LinkedInCertificationOptions {
+  const issueDate = new Date(generatedAt);
+  
+  return {
+    certificateName: options.courseName,
+    organizationName: 'ITSCHOOL',
+    issueMonth: issueDate.getMonth() + 1, // getMonth() es 0-indexed
+    issueYear: issueDate.getFullYear(),
+    certificationUrl: options.validationUrl,
+    certificationId: token.substring(0, 16).toUpperCase(),
+    // Sin expiración = certificado permanente
+  };
+}
+
+/**
  * Genera link para compartir en X (Twitter)
  */
 export function getXShareLink(options: ShareOptions): string {
