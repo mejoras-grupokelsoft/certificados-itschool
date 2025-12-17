@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import ShareCertificateButton from '@/app/components/ShareCertificateButton';
+import CommitmentLetterModal from '@/app/components/CommitmentLetterModal';
 
 /**
  * Capitaliza la primera letra de cada palabra en un nombre
@@ -45,6 +46,8 @@ export default function CursoPage() {
   const [resendingEmail, setResendingEmail] = useState(false);
   const [emailResent, setEmailResent] = useState(false);
   const [alreadyDownloadedBefore, setAlreadyDownloadedBefore] = useState(false); // Si ya compartió/descargó antes, no pedir compartir
+  const [hasAcceptedCommitment, setHasAcceptedCommitment] = useState(false); // Si ya aceptó carta de compromiso
+  const [showCommitmentModal, setShowCommitmentModal] = useState(false); // Mostrar modal de carta de compromiso
 
   // Marcar certificado como compartido (desbloquea futuras descargas sin compartir)
   const handleShareComplete = async () => {
@@ -64,6 +67,35 @@ export default function CursoPage() {
         // No es crítico, el usuario ya puede descargar en esta sesión
       }
     }
+  };
+
+  // Manejar aceptación de carta de compromiso
+  const handleCommitmentAccepted = async () => {
+    setShowCommitmentModal(false);
+    setHasAcceptedCommitment(true);
+    
+    // Guardar en el servidor para que persista entre recargas
+    if (certificateToken) {
+      try {
+        await fetch('/api/certificate/accept-commitment', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ token: certificateToken }),
+        });
+        console.log('✅ Carta de compromiso aceptada y guardada');
+      } catch (error) {
+        console.warn('No se pudo guardar aceptación de compromiso:', error);
+        // No es crítico, el usuario ya puede continuar en esta sesión
+      }
+    }
+  };
+
+  // Abrir modal de compartir (requiere aceptar compromiso primero)
+  const handleShareClick = () => {
+    if (!hasAcceptedCommitment) {
+      setShowCommitmentModal(true);
+    }
+    // Si ya aceptó, el componente ShareCertificateButton maneja el flujo
   };
 
   const handleDownloadPdf = async (e?: React.MouseEvent) => {
@@ -213,6 +245,10 @@ export default function CursoPage() {
       if (wasDownloadedBefore) {
         setHasShared(true); // Skip share requirement
       }
+      
+      // Si ya aceptó la carta de compromiso antes
+      const wasCommitmentAccepted = certificateData.hasAcceptedCommitment === true;
+      setHasAcceptedCommitment(wasCommitmentAccepted);
       
       setStep('success');
     } catch (err) {
@@ -430,8 +466,37 @@ export default function CursoPage() {
                 )}
 
                 <div className="space-y-4">
-                  {/* Botón de compartir certificado */}
-                  {!hasShared && (
+                  {/* Modal de carta de compromiso */}
+                  <CommitmentLetterModal
+                    isOpen={showCommitmentModal}
+                    onAccept={handleCommitmentAccepted}
+                    onClose={() => setShowCommitmentModal(false)}
+                  />
+
+                  {/* Paso 1: Aceptar carta de compromiso (si no lo hizo antes) */}
+                  {!hasAcceptedCommitment && !hasShared && (
+                    <div className="bg-gradient-to-r from-amber-50 to-orange-50 border-2 border-amber-300 rounded-lg p-6 mb-4">
+                      <p className="text-amber-900 text-center font-bold text-xl mb-2">
+                        📜 Carta de Compromiso
+                      </p>
+                      <p className="text-amber-700 text-center text-sm mb-4">
+                        Antes de descargar tu certificado, te invitamos a leer y aceptar nuestra carta de compromiso
+                      </p>
+                      
+                      <button
+                        onClick={() => setShowCommitmentModal(true)}
+                        className="w-full flex items-center justify-center gap-3 px-6 py-4 rounded-lg font-semibold text-lg transition-all bg-gradient-to-r from-amber-500 to-orange-500 text-white hover:from-amber-600 hover:to-orange-600"
+                      >
+                        <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                        </svg>
+                        <span>Leer Carta de Compromiso</span>
+                      </button>
+                    </div>
+                  )}
+
+                  {/* Paso 2: Compartir en redes (después de aceptar compromiso) */}
+                  {hasAcceptedCommitment && !hasShared && (
                     <div className="bg-gradient-to-r from-blue-50 to-indigo-50 border-2 border-blue-200 rounded-lg p-6 mb-4">
                       <p className="text-blue-900 text-center font-bold text-xl mb-2">
                         🎉 ¡Compartí tu logro!
@@ -453,6 +518,7 @@ export default function CursoPage() {
                     </div>
                   )}
 
+                  {/* Paso 3: Ya compartió - mostrar éxito y opción de volver a compartir */}
                   {hasShared && (
                     <div className="bg-gradient-to-r from-green-50 to-emerald-50 border-2 border-green-200 rounded-lg p-4 mb-4 text-center">
                       {alreadyDownloadedBefore ? (
@@ -491,7 +557,7 @@ export default function CursoPage() {
                     {!hasShared && (
                       <span className="absolute left-4 top-1/2 transform -translate-y-1/2">🔒</span>
                     )}
-                    {downloadingPdf ? '⏳ Descargando...' : hasShared ? '📄 Descargar Certificado PDF' : '📄 Primero compartí tu logro ☝️'}
+                    {downloadingPdf ? '⏳ Descargando...' : hasShared ? '📄 Descargar Certificado PDF' : !hasAcceptedCommitment ? '📄 Primero aceptá la carta de compromiso ☝️' : '📄 Primero compartí tu logro ☝️'}
                   </button>
 
                   <a
@@ -516,6 +582,8 @@ export default function CursoPage() {
                       setIsExistingCertificate(false);
                       setEmailResent(false);
                       setAlreadyDownloadedBefore(false);
+                      setHasAcceptedCommitment(false);
+                      setShowCommitmentModal(false);
                     }}
                     className="block w-full bg-gray-200 text-gray-700 text-center px-6 py-4 rounded-lg font-semibold hover:bg-gray-300 transition-colors"
                   >

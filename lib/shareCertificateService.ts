@@ -180,7 +180,7 @@ export function buildLinkedInCertificationOptions(
   
   return {
     certificateName: options.courseName,
-    organizationName: 'ITSCHOOL',
+    organizationName: 'ITSCHOOL - Educacion IT',
     issueMonth: issueDate.getMonth() + 1, // getMonth() es 0-indexed
     issueYear: issueDate.getFullYear(),
     certificationUrl: options.validationUrl,

@@ -104,3 +104,13 @@ export async function markCertificateAsDownloaded(token: string): Promise<boolea
     firstDownloadAt: new Date().toISOString()
   });
 }
+
+/**
+ * Marca que el estudiante aceptó la carta de compromiso
+ */
+export async function markCommitmentAccepted(token: string): Promise<boolean> {
+  return updateCertificate(token, {
+    hasAcceptedCommitment: true,
+    commitmentAcceptedAt: new Date().toISOString()
+  });
+}
