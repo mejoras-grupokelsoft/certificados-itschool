@@ -130,13 +130,6 @@ export default function CommitmentLetterModal({
                 </ul>
               </div>
 
-              <p>
-                Agradecemos tu participación al éxito educativo de IT School y de nuestros estudiantes, 
-                por eso si aceptás esta propuesta te pedimos que nos confirmes por mail a{' '}
-                <a href="mailto:itschool@grupokelsoft.com" className="text-[#4285F4] hover:underline">itschool@grupokelsoft.com</a>. 
-                Si tenés alguna pregunta o inquietud, no dudes en comunicarte con nosotros.
-              </p>
-
               <p>Atentamente,</p>
               <p className="font-semibold text-gray-900">Equipo de ITSCHOOL</p>
             </div>
