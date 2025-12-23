@@ -3,6 +3,7 @@ import QRCode from 'qrcode';
 import { readFileSync } from 'fs';
 import { join } from 'path';
 import type { CertificateData } from './types';
+import { isSECCourse, removeSECSuffix } from './sheetsConfig';
 
 const BUILD_ID = `pdfGenerator-${new Date().toISOString()}-${Date.now()}`;
 const BUILD_TIMESTAMP = Date.now();
@@ -32,12 +33,26 @@ export async function generatePDF(certificateData: CertificateData): Promise<Buf
       courseName: certificateData.courseName,
     }));
 
+    // Detectar institución desde los datos del certificado
+    const isSecCourse = certificateData.institution === 'SEC';
+    console.log(`🔍 Institución detectada: ${certificateData.institution}`);
+    console.log(`📝 Curso: ${certificateData.courseName}`);
+    
+    // Remover sufijo "- SEC" del nombre del curso para mostrar en certificado (por si aún lo tiene)
+    const displayCourseName = certificateData.courseName.replace(/\s*-\s*SEC\s*$/i, '').trim();
+    console.log('📝 Nombre a mostrar en certificado:', displayCourseName);
+    
+    // Seleccionar template y color según institución
+    const templateFilename = isSecCourse ? 'certificateTemplateSEC.pdf' : 'certificateTemplateV2.pdf';
+    const certificateColor = isSecCourse ? '#202C72' : '#4285F4';
+    console.log(`🎨 Template: ${templateFilename}, Color: ${certificateColor}`);
+    
     // Leer el PDF template
-    console.log('📄 [NUEVO] Leyendo certificateTemplateV2.pdf...');
-    const templatePath = join(process.cwd(), 'lib', 'certificateTemplateV2.pdf');
-    console.log('📄 [NUEVO] Template path:', templatePath);
+    console.log(`📄 Cargando template: ${templateFilename}...`);
+    const templatePath = join(process.cwd(), 'lib', templateFilename);
+    console.log('📄 Template path:', templatePath);
     const existingPdfBytes = readFileSync(templatePath);
-    console.log('📄 Template V2 size:', existingPdfBytes.length, 'bytes');
+    console.log('📄 Template size:', existingPdfBytes.length, 'bytes');
     
     // Cargar el PDF
     const pdfDoc = await PDFDocument.load(existingPdfBytes);
@@ -45,15 +60,15 @@ export async function generatePDF(certificateData: CertificateData): Promise<Buf
     const firstPage = pages[0];
     
     const { width, height } = firstPage.getSize();
-    console.log(' PDF cargado:', width, 'x', height, 'pts');
+    console.log('✅ PDF cargado:', width, 'x', height, 'pts');
     
     // Cargar fuentes (usaremos Helvetica Bold como aproximación a Poppins)
     const fontBold = await pdfDoc.embedFont(StandardFonts.HelveticaBold);
     const fontRegular = await pdfDoc.embedFont(StandardFonts.Helvetica);
     
-    // Generar QR Code
+    // Generar QR Code con color correspondiente
     console.log('📄 Generando QR code...');
-    const qrOptions = { width: 300, margin: 1, color: { dark: '#4285F4', light: '#FFFFFF' } };
+    const qrOptions = { width: 300, margin: 1, color: { dark: certificateColor, light: '#FFFFFF' } };
     console.log('📄 QR options:', JSON.stringify(qrOptions));
     const qrCodeDataUrl = await QRCode.toDataURL(certificateData.validationUrl, qrOptions);
 
@@ -78,8 +93,11 @@ export async function generatePDF(certificateData: CertificateData): Promise<Buf
     // Origen en pdf-lib: esquina inferior izquierda
     // Template real: width x height en puntos
     
-    // Color azul corporativo: #4285F4
-    const blueColor = rgb(0.259, 0.522, 0.957); // #4285F4
+    // Color del certificado (azul corporativo ITSCHOOL o azul oscuro SEC)
+    const colorRgb = isSecCourse 
+      ? rgb(0.125, 0.173, 0.447) // #202C72 para SEC
+      : rgb(0.259, 0.522, 0.957); // #4285F4 para estándar
+    console.log(`🎨 Color aplicado: ${certificateColor} (${isSecCourse ? 'SEC' : 'ITSCHOOL'})`);
     
     // Función helper para convertir CM a puntos
     const cmToPts = (cm: number) => cm * 28.35;
@@ -88,7 +106,7 @@ export async function generatePDF(certificateData: CertificateData): Promise<Buf
     // Posición: x=1.07cm, y=9.64cm (desde arriba)
     // Tamaño máximo: ancho 20.78cm
     const courseFontSize = 39;
-    const courseText = certificateData.courseName;
+    const courseText = displayCourseName; // Usar nombre sin sufijo "- SEC"
     const courseX = cmToPts(1.07);
     const courseY = height - cmToPts(9.64);
     const courseMaxWidth = cmToPts(20.78);
@@ -119,7 +137,7 @@ export async function generatePDF(certificateData: CertificateData): Promise<Buf
       y: courseY,
       size: courseFontSize,
       font: fontBold,
-      color: blueColor,
+      color: colorRgb,
       maxWidth: courseMaxWidth,
       lineHeight: courseLineHeight,
     });
@@ -172,7 +190,7 @@ export async function generatePDF(certificateData: CertificateData): Promise<Buf
       y: line1Y,
       size: textFontSize,
       font: fontRegular,
-      color: blueColor,
+      color: colorRgb,
     });
     
     const beforeNameWidth = fontRegular.widthOfTextAtSize(beforeName, textFontSize);
@@ -181,7 +199,7 @@ export async function generatePDF(certificateData: CertificateData): Promise<Buf
       y: line1Y,
       size: textFontSize,
       font: fontBold,
-      color: blueColor,
+      color: colorRgb,
     });
     
     const studentNameWidth = fontBold.widthOfTextAtSize(studentName, textFontSize);
@@ -193,7 +211,7 @@ export async function generatePDF(certificateData: CertificateData): Promise<Buf
       y: line1Y,
       size: textFontSize,
       font: fontRegular,
-      color: blueColor,
+      color: colorRgb,
     });
     
     // 3. Texto "Cumpliendo todos los requisitos exigidos."
@@ -203,7 +221,7 @@ export async function generatePDF(certificateData: CertificateData): Promise<Buf
       y: line2Y,
       size: textFontSize,
       font: fontRegular,
-      color: blueColor,
+      color: colorRgb,
     });
     
     // 3.5 Fecha de emisión centrada y en negrita
@@ -221,7 +239,7 @@ export async function generatePDF(certificateData: CertificateData): Promise<Buf
       y: emissionY,
       size: emissionFontSize,
       font: fontBold,
-      color: blueColor,
+      color: colorRgb,
     });
     console.log('📅 Fecha de emisión agregada:', { emissionText, emissionX, emissionY });
     
@@ -239,7 +257,7 @@ export async function generatePDF(certificateData: CertificateData): Promise<Buf
       y: docenteY,
       size: instructorFontSize,
       font: fontRegular,
-      color: blueColor,
+      color: colorRgb,
     });
     
     const instructorText = certificateData.instructorName;
@@ -253,7 +271,7 @@ export async function generatePDF(certificateData: CertificateData): Promise<Buf
       y: instructorY,
       size: instructorFontSize,
       font: fontRegular,
-      color: blueColor,
+      color: colorRgb,
     });
     
     // 5. Insertar QR Code (abajo derecha)

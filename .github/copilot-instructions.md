@@ -307,6 +307,56 @@ Use these colors throughout the application (UI, validation page, error messages
 - ITSCHOOL logo: `Logo Original a color.svg` (use in validation page and UI)
 - Rocket icon: `lib/rocket-icon.png` (35x35pts, transparent background)
 
+## SEC Certificate Variant (December 2025)
+
+The system now supports a **specialized certificate variant** for courses affiliated with a trade union organization. These courses are identified by the "- SEC" suffix in their course names.
+
+### Key Differences from Standard Certificates
+
+**1. Certificate Design & Colors**:
+- Uses a **different PDF template** with custom banner/header design (not the standard ITSCHOOL template)
+- **Primary color**: `#202C72` (darker blue) - applies to ALL certificate text and design elements
+- Same A4 landscape dimensions and coordinate system as standard template
+- Structure remains identical: course title, student name, instructor section, QR code
+
+**2. Course Name Display**:
+- Courses in Canvas are named with "- SEC" suffix (e.g., "Introducción a Python - SEC")
+- **CRITICAL**: When generating certificates, **remove the "- SEC" suffix** from the displayed course name
+- Example: "Introducción a Python - SEC" → displays as "Introducción a Python" on certificate
+- Implementation: Strip "- SEC" in `lib/pdfGenerator.ts` before overlaying course name
+
+**3. Google Sheets Configuration**:
+- SEC courses use a **separate Google Sheets spreadsheet** for configuration and metrics
+- Spreadsheet ID stored in dedicated environment variable: `GOOGLE_SHEETS_SPREADSHEET_ID_SEC`
+- Same sheet structure: "Configuracion" tab with columns: `CourseID`, `CourseName`, `InstructorName`
+- Purpose: Separate analytics and metrics tracking for SEC courses vs standard ITSCHOOL courses
+
+**4. Detection Logic**:
+- System auto-detects SEC courses by presence of "- SEC" suffix in course name
+- Route to appropriate Google Sheets configuration (standard vs SEC)
+- Apply corresponding certificate template and color scheme
+
+### Implementation Checklist
+
+When working with SEC certificates:
+- [ ] Check for "- SEC" suffix in course name from Canvas/Sheets
+- [ ] Query `GOOGLE_SHEETS_SPREADSHEET_ID_SEC` for course config
+- [ ] Strip "- SEC" from `courseName` before PDF generation
+- [ ] Use SEC certificate template with `#202C72` color
+- [ ] Maintain same validation flow (Test Final ≥ 70, pagination, etc.)
+- [ ] Store certificates in same Upstash Redis (no separation needed)
+
+**Environment Variables**:
+```bash
+# Standard ITSCHOOL courses
+GOOGLE_SHEETS_SPREADSHEET_ID=<standard_spreadsheet_id>
+
+# SEC variant courses
+GOOGLE_SHEETS_SPREADSHEET_ID_SEC=<sec_spreadsheet_id>
+```
+
+**Note**: SEC courses follow the same Canvas validation rules (Test Final ≥ 70, pagination for 100+ students, exclusion of TP Final). Only the certificate design and configuration source differ.
+
 >>>>>>> testing
 ## Recent Architectural Decisions (Nov 2025)
 

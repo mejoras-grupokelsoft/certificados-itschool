@@ -2,11 +2,28 @@ import { google } from 'googleapis';
 import type { CourseConfig } from './types';
 
 const GOOGLE_SHEETS_SPREADSHEET_ID = process.env.GOOGLE_SHEETS_SPREADSHEET_ID;
+const GOOGLE_SHEETS_SPREADSHEET_ID_SEC = process.env.GOOGLE_SHEETS_SPREADSHEET_ID_SEC;
 const GOOGLE_SERVICE_ACCOUNT_EMAIL = process.env.GOOGLE_SERVICE_ACCOUNT_EMAIL;
 const GOOGLE_PRIVATE_KEY = process.env.GOOGLE_PRIVATE_KEY?.replace(/\\n/g, '\n');
 
 if (!GOOGLE_SHEETS_SPREADSHEET_ID || !GOOGLE_SERVICE_ACCOUNT_EMAIL || !GOOGLE_PRIVATE_KEY) {
   throw new Error('Faltan variables de entorno de Google Sheets');
+}
+
+/**
+ * Detecta si un curso es de la variante SEC por su nombre
+ * Los cursos SEC tienen el sufijo "- SEC" en su nombre
+ */
+export function isSECCourse(courseName: string): boolean {
+  return courseName.trim().endsWith('- SEC');
+}
+
+/**
+ * Remueve el sufijo "- SEC" del nombre del curso
+ * Usado para mostrar el nombre limpio en el certificado
+ */
+export function removeSECSuffix(courseName: string): string {
+  return courseName.replace(/\s*-\s*SEC\s*$/i, '').trim();
 }
 
 // Configurar cliente de Google Sheets con permisos de lectura Y escritura
@@ -23,6 +40,9 @@ const sheets = google.sheets({ version: 'v4', auth });
 // Cache en memoria para reducir llamadas a Google Sheets
 let configCache: CourseConfig[] | null = null;
 let cacheTimestamp: number = 0;
+// Cache separado para cursos SEC
+let configCacheSEC: CourseConfig[] | null = null;
+let cacheTimestampSEC: number = 0;
 const CACHE_DURATION = 5 * 60 * 1000; // 5 minutos
 
 /**
@@ -36,17 +56,33 @@ const CACHE_DURATION = 5 * 60 * 1000; // 5 minutos
  * 
  * PassingScore fijo: 70 puntos
  * Duration: Se calcula automáticamente desde Canvas
+ * 
+ * @param isSEC - Si true, consulta el spreadsheet SEC, si false consulta el estándar
  */
-export async function getCourseConfigs(): Promise<CourseConfig[]> {
+export async function getCourseConfigs(isSEC: boolean = false): Promise<CourseConfig[]> {
   // Retornar cache si aún es válido
   const now = Date.now();
-  if (configCache && now - cacheTimestamp < CACHE_DURATION) {
-    return configCache;
+  const cache = isSEC ? configCacheSEC : configCache;
+  const timestamp = isSEC ? cacheTimestampSEC : cacheTimestamp;
+  
+  if (cache && now - timestamp < CACHE_DURATION) {
+    console.log(`📋 Usando cache ${isSEC ? 'SEC' : 'estándar'} válido`);
+    return cache;
   }
 
   try {
+    const spreadsheetId = isSEC ? GOOGLE_SHEETS_SPREADSHEET_ID_SEC : GOOGLE_SHEETS_SPREADSHEET_ID;
+    
+    if (!spreadsheetId) {
+      throw new Error(`Falta variable de entorno GOOGLE_SHEETS_SPREADSHEET_ID${isSEC ? '_SEC' : ''}`);
+    }
+    
+    console.log(`📋 Consultando Google Sheets ${isSEC ? 'SEC' : 'estándar'}`);
+    console.log(`📋 Spreadsheet ID completo: ${spreadsheetId}`);
+    console.log(`📋 Rango: Configuracion!A2:C`);
+    
     const response = await sheets.spreadsheets.values.get({
-      spreadsheetId: GOOGLE_SHEETS_SPREADSHEET_ID,
+      spreadsheetId,
       range: 'Configuracion!A2:C', // Solo 3 columnas: CourseID, CourseName, InstructorName
     });
 
@@ -61,30 +97,58 @@ export async function getCourseConfigs(): Promise<CourseConfig[]> {
       }))
       .filter((config) => config.courseId && config.courseName && config.instructorName);
 
-    // Actualizar cache
-    configCache = configs;
-    cacheTimestamp = now;
+    // Actualizar cache correspondiente
+    if (isSEC) {
+      configCacheSEC = configs;
+      cacheTimestampSEC = now;
+    } else {
+      configCache = configs;
+      cacheTimestamp = now;
+    }
 
+    console.log(`✅ Configuración ${isSEC ? 'SEC' : 'estándar'} cargada: ${configs.length} cursos`);
     return configs;
   } catch (error) {
-    console.error('Error leyendo configuración de Google Sheets:', error);
+    console.error(`❌ Error leyendo configuración de Google Sheets ${isSEC ? 'SEC' : 'estándar'}:`, error);
     
     // Si hay cache anterior, retornarlo aunque esté vencido
-    if (configCache) {
-      console.warn('Usando cache vencido debido a error');
-      return configCache;
+    if (cache) {
+      console.warn(`⚠️ Usando cache ${isSEC ? 'SEC' : 'estándar'} vencido debido a error`);
+      return cache;
     }
     
-    throw new Error('Error al leer configuración de Google Sheets');
+    throw new Error(`Error al leer configuración de Google Sheets ${isSEC ? 'SEC' : 'estándar'}`);
   }
 }
 
 /**
  * Obtiene la configuración de un curso específico por su ID
+ * Busca automáticamente en el spreadsheet correcto (estándar o SEC)
+ * detectando el sufijo "- SEC" en el nombre del curso
  */
 export async function getCourseConfig(courseId: string): Promise<CourseConfig | null> {
-  const configs = await getCourseConfigs();
-  return configs.find((config) => config.courseId === courseId) || null;
+  // Primero buscar en configuración estándar
+  console.log('🔍 Buscando curso', courseId, 'en configuración estándar...');
+  let configs = await getCourseConfigs(false);
+  let config = configs.find((config) => config.courseId === courseId);
+  
+  if (config) {
+    console.log('✅ Curso encontrado en configuración estándar:', config.courseName);
+    return config;
+  }
+  
+  // Si no se encuentra, buscar en configuración SEC
+  console.log('🔍 Curso no encontrado en estándar, buscando en configuración SEC...');
+  configs = await getCourseConfigs(true);
+  config = configs.find((config) => config.courseId === courseId);
+  
+  if (config) {
+    console.log('✅ Curso encontrado en configuración SEC:', config.courseName);
+  } else {
+    console.log('❌ Curso no encontrado en ninguna configuración');
+  }
+  
+  return config || null;
 }
 
 /**
@@ -101,6 +165,9 @@ export async function getAllCourses(): Promise<CourseConfig[]> {
 export function clearConfigCache(): void {
   configCache = null;
   cacheTimestamp = 0;
+  configCacheSEC = null;
+  cacheTimestampSEC = 0;
+  console.log('🧹 Cache limpiado (estándar y SEC)');
 }
 
 /**

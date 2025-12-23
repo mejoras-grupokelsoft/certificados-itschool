@@ -36,6 +36,7 @@ export interface CertificateData {
   score: number;
   validationUrl: string;
   generatedAt: string;
+  institution: 'ITSCHOOL' | 'SEC'; // Tipo de institución que emite el certificado
   issueDate?: string; // Deprecated - use generatedAt instead
   hasBeenDownloaded?: boolean; // True after first successful download (unlocks future downloads without sharing)
   firstDownloadAt?: string; // ISO timestamp of first download

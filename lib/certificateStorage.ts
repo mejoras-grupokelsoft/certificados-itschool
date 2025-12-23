@@ -35,6 +35,8 @@ export async function saveCertificate(
 
 /**
  * Recupera los datos de un certificado desde Upstash Redis
+ * Si el certificado no tiene el campo 'institution', le asigna 'ITSCHOOL' por defecto
+ * (migración automática para certificados antiguos)
  */
 export async function getCertificate(token: string): Promise<CertificateData | null> {
   const key = `certificate:${token}`;
@@ -45,7 +47,17 @@ export async function getCertificate(token: string): Promise<CertificateData | n
   }
   
   try {
-    return typeof data === 'string' ? JSON.parse(data) : data as CertificateData;
+    const certificate = typeof data === 'string' ? JSON.parse(data) : data as CertificateData;
+    
+    // Migración automática: agregar institution si no existe
+    if (!certificate.institution) {
+      console.log(`🔄 Migrando certificado ${token.slice(0, 10)}... agregando institution: 'ITSCHOOL'`);
+      certificate.institution = 'ITSCHOOL';
+      // Guardar el certificado actualizado
+      await saveCertificate(token, certificate);
+    }
+    
+    return certificate;
   } catch {
     return null;
   }

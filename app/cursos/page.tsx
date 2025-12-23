@@ -7,6 +7,7 @@ interface Course {
   courseId: string;
   courseName: string;
   instructorName: string;
+  type: 'standard' | 'sec';
 }
 
 export default function CursosPage() {
@@ -17,6 +18,7 @@ export default function CursosPage() {
   const [error, setError] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc');
+  const [courseTypeFilter, setCourseTypeFilter] = useState<'all' | 'standard' | 'sec'>('all');
   const [page, setPage] = useState(1);
   const COURSES_PER_PAGE = 10;
 
@@ -26,7 +28,7 @@ export default function CursosPage() {
 
   useEffect(() => {
     filterAndSortCourses();
-  }, [courses, searchTerm, sortOrder]);
+  }, [courses, searchTerm, sortOrder, courseTypeFilter]);
 
   useEffect(() => {
     // Actualizar cursos mostrados según la paginación
@@ -36,7 +38,7 @@ export default function CursosPage() {
   useEffect(() => {
     // Resetear paginación cuando cambian los filtros
     setPage(1);
-  }, [searchTerm, sortOrder]);
+  }, [searchTerm, sortOrder, courseTypeFilter]);
 
   const fetchCourses = async () => {
     try {
@@ -56,9 +58,14 @@ export default function CursosPage() {
   const filterAndSortCourses = () => {
     let filtered = courses;
 
+    // Filtrar por tipo de curso
+    if (courseTypeFilter !== 'all') {
+      filtered = filtered.filter(course => course.type === courseTypeFilter);
+    }
+
     // Filtrar por búsqueda
     if (searchTerm) {
-      filtered = courses.filter(course =>
+      filtered = filtered.filter(course =>
         course.courseName.toLowerCase().includes(searchTerm.toLowerCase()) ||
         course.instructorName.toLowerCase().includes(searchTerm.toLowerCase())
       );
@@ -101,6 +108,45 @@ export default function CursosPage() {
           <p className="text-center" style={{ color: '#666666' }}>
             Seleccioná un curso para generar tu certificado
           </p>
+        </div>
+
+        {/* Pestañas de filtro por tipo */}
+        <div className="max-w-6xl mx-auto mb-6">
+          <div className="flex justify-center gap-2">
+            <button
+              onClick={() => setCourseTypeFilter('all')}
+              className={`px-6 py-2 rounded-lg font-semibold transition-all ${
+                courseTypeFilter === 'all'
+                  ? 'text-white'
+                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+              }`}
+              style={courseTypeFilter === 'all' ? { backgroundColor: '#4285F4' } : {}}
+            >
+              Todos ({courses.length})
+            </button>
+            <button
+              onClick={() => setCourseTypeFilter('standard')}
+              className={`px-6 py-2 rounded-lg font-semibold transition-all ${
+                courseTypeFilter === 'standard'
+                  ? 'text-white'
+                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+              }`}
+              style={courseTypeFilter === 'standard' ? { backgroundColor: '#4285F4' } : {}}
+            >
+              ITSCHOOL ({courses.filter(c => c.type === 'standard').length})
+            </button>
+            <button
+              onClick={() => setCourseTypeFilter('sec')}
+              className={`px-6 py-2 rounded-lg font-semibold transition-all ${
+                courseTypeFilter === 'sec'
+                  ? 'text-white'
+                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+              }`}
+              style={courseTypeFilter === 'sec' ? { backgroundColor: '#202C72' } : {}}
+            >
+              SEC ({courses.filter(c => c.type === 'sec').length})
+            </button>
+          </div>
         </div>
 
         {/* Barra de búsqueda y ordenamiento */}

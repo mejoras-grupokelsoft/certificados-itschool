@@ -77,6 +77,10 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Detectar institución por sufijo "- SEC"
+    const institution = courseName.trim().endsWith('- SEC') ? 'SEC' : 'ITSCHOOL';
+    console.log(`🏛️ Institución detectada: ${institution} (curso: ${courseName})`);
+
     // Crear datos del certificado
     const certificateData: CertificateData = {
       token,
@@ -90,6 +94,7 @@ export async function POST(request: NextRequest) {
       score,
       validationUrl: `${BASE_URL}/validar/${token}`,
       generatedAt: new Date().toISOString(),
+      institution, // Guardar tipo de institución en Redis
     };
 
     // Guardar en Upstash Redis
