@@ -12,6 +12,7 @@ interface ShareFallbackModalProps {
   validationUrl: string;
   token?: string;          // Token para agregar a LinkedIn
   generatedAt?: string;    // Fecha de emisión para LinkedIn
+  institution?: 'ITSCHOOL' | 'SEC'; // Institución emisora del certificado
 }
 
 export default function ShareFallbackModal({
@@ -23,12 +24,18 @@ export default function ShareFallbackModal({
   validationUrl,
   token,
   generatedAt,
+  institution = 'ITSCHOOL',
 }: ShareFallbackModalProps) {
   const [shared, setShared] = useState(false);
   const [copied, setCopied] = useState(false);
   const [showAddToProfile, setShowAddToProfile] = useState(false);
 
   if (!isOpen) return null;
+
+  // Texto personalizado según institución
+  const shareMessage = institution === 'SEC'
+    ? 'Arrobá a Grupo Kelsoft y mencioná a la Universidad de Empleados de Comercio (SEC)'
+    : 'Arrobanos en ITSCHOOL - Educación IT';
 
   const handleLinkedIn = () => {
     window.open(getLinkedInShareLink({ certificateUrl, studentName, courseName, validationUrl }), '_blank', 'width=600,height=600');
@@ -99,7 +106,7 @@ export default function ShareFallbackModal({
                 </svg>
               </div>
               <p className="text-gray-900 font-medium">¡Listo! ¿Compartir en más redes?</p>
-              <p className="text-xs text-gray-500 mt-1">Arrobanos en <a href="https://www.linkedin.com/company/itschool-educacion-it" target="_blank" rel="noopener noreferrer" className="text-[#0A66C2] hover:underline">ITSCHOOL - Educación IT</a></p>
+              <p className="text-xs text-gray-500 mt-1">{shareMessage}</p>
             </div>
 
             {/* Íconos de redes sociales */}

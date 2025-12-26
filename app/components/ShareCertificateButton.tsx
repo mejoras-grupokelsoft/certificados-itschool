@@ -13,6 +13,7 @@ interface ShareCertificateButtonProps {
   compact?: boolean; // Modo compacto para botón pequeño
   token?: string;          // Token para LinkedIn "Agregar al Perfil"
   generatedAt?: string;    // Fecha de emisión para LinkedIn
+  institution?: 'ITSCHOOL' | 'SEC'; // Institución emisora del certificado
 }
 
 export default function ShareCertificateButton({
@@ -25,6 +26,7 @@ export default function ShareCertificateButton({
   compact = false,
   token,
   generatedAt,
+  institution = 'ITSCHOOL',
 }: ShareCertificateButtonProps) {
   const [sharing, setSharing] = useState(false);
   const [showModal, setShowModal] = useState(false);
@@ -64,6 +66,7 @@ export default function ShareCertificateButton({
           validationUrl={validationUrl}
           token={token}
           generatedAt={generatedAt}
+          institution={institution}
         />
       </>
     );
@@ -102,6 +105,7 @@ export default function ShareCertificateButton({
         validationUrl={validationUrl}
         token={token}
         generatedAt={generatedAt}
+        institution={institution}
       />
     </>
   );

@@ -36,6 +36,7 @@ export async function GET(
         duration: certificateData.duration,
         score: certificateData.score,
         generatedAt: certificateData.generatedAt,
+        institution: certificateData.institution || 'ITSCHOOL',
       },
       { 
         status: 200,

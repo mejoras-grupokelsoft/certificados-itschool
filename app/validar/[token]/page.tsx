@@ -15,6 +15,7 @@ interface CertificateInfo {
   duration: string;
   score: number;
   generatedAt: string;
+  institution?: 'ITSCHOOL' | 'SEC';
 }
 
 /**
@@ -77,11 +78,19 @@ export default function ValidarCertificadoPage() {
         {/* Header */}
         <div className="text-center mb-12">
           <div className="flex justify-center mb-6">
-            <img 
-              src="/Logo Original a color.svg" 
-              alt="IT SCHOOL Logo" 
-              className="h-20 w-auto"
-            />
+            {certificateInfo?.institution === 'SEC' ? (
+              <img 
+                src="/sec-logo.svg" 
+                alt="SEC Logo" 
+                className="h-20 w-auto"
+              />
+            ) : (
+              <img 
+                src="/Logo Original a color.svg" 
+                alt="IT SCHOOL Logo" 
+                className="h-20 w-auto"
+              />
+            )}
           </div>
           <p className="text-gray-600 text-lg">
             Validación de Certificado

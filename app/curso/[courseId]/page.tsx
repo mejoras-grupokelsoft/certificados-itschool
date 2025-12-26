@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import ShareCertificateButton from '@/app/components/ShareCertificateButton';
@@ -48,6 +48,25 @@ export default function CursoPage() {
   const [alreadyDownloadedBefore, setAlreadyDownloadedBefore] = useState(false); // Si ya compartió/descargó antes, no pedir compartir
   const [hasAcceptedCommitment, setHasAcceptedCommitment] = useState(false); // Si ya aceptó carta de compromiso
   const [showCommitmentModal, setShowCommitmentModal] = useState(false); // Mostrar modal de carta de compromiso
+  const [institution, setInstitution] = useState<'ITSCHOOL' | 'SEC' | null>(null); // Institución emisora del certificado
+  const [loadingInstitution, setLoadingInstitution] = useState(true); // Cargando institución
+
+  // Detectar institución del curso al cargar la página
+  useEffect(() => {
+    const detectInstitution = async () => {
+      try {
+        const response = await fetch(`/api/courses/${courseId}/institution`);
+        const data = await response.json();
+        setInstitution(data.institution || 'ITSCHOOL');
+      } catch (error) {
+        console.error('Error detectando institución:', error);
+        setInstitution('ITSCHOOL'); // Default a ITSCHOOL en caso de error
+      } finally {
+        setLoadingInstitution(false);
+      }
+    };
+    detectInstitution();
+  }, [courseId]);
 
   // Marcar certificado como compartido (desbloquea futuras descargas sin compartir)
   const handleShareComplete = async () => {
@@ -238,6 +257,7 @@ export default function CursoPage() {
       setCourseName(validateData.courseName);
       setIsExistingCertificate(certificateData.existing === true);
       setEmailResent(false); // Reset para permitir reenvío
+      setInstitution(certificateData.institution || 'ITSCHOOL'); // Guardar institución
       
       // Si ya fue descargado antes, permitir descarga sin compartir
       const wasDownloadedBefore = certificateData.hasBeenDownloaded === true;
@@ -263,18 +283,28 @@ export default function CursoPage() {
     <div className="min-h-screen bg-white">
       <div className="container mx-auto px-4 py-12">
         {/* Header */}
-        <div className="flex justify-center mb-12">
+        <div className="flex justify-center">
           <Link href="/" className="inline-block">
-            <img 
-              src="/Logo Original a color.svg" 
-              alt="ITSCHOOL Logo" 
-              className="h-20 w-auto"
-            />
+            {loadingInstitution ? (
+              <div className="h-32 w-64 bg-gray-100 animate-pulse rounded-lg"></div>
+            ) : institution === 'SEC' ? (
+              <img 
+                src="/sec-logo.svg" 
+                alt="SEC Logo" 
+                className="h-32 w-auto"
+              />
+            ) : (
+              <img 
+                src="/Logo Original a color.svg" 
+                alt="ITSCHOOL Logo" 
+                className="h-32 w-auto"
+              />
+            )}
           </Link>
         </div>
 
         {/* Main Content */}
-        <div className="max-w-2xl mx-auto">
+        <div className="max-w-2xl mx-auto" style={{ marginTop: '-20px' }}>
           {step === 'form' && (
             <div className="bg-white rounded-2xl shadow-xl p-8 md:p-12">
               <h2 className="text-3xl font-bold mb-4 text-center" style={{ color: '#1A1A1A' }}>
@@ -473,8 +503,8 @@ export default function CursoPage() {
                     onClose={() => setShowCommitmentModal(false)}
                   />
 
-                  {/* Paso 1: Aceptar carta de compromiso (si no lo hizo antes) */}
-                  {!hasAcceptedCommitment && !hasShared && (
+                  {/* Paso 1: Aceptar carta de compromiso (solo para ITSCHOOL) */}
+                  {institution === 'ITSCHOOL' && !hasAcceptedCommitment && !hasShared && (
                     <div className="bg-gradient-to-r from-amber-50 to-orange-50 border-2 border-amber-300 rounded-lg p-6 mb-4">
                       <p className="text-amber-900 text-center font-bold text-xl mb-2">
                         📜 Carta de Compromiso
@@ -495,8 +525,8 @@ export default function CursoPage() {
                     </div>
                   )}
 
-                  {/* Paso 2: Compartir en redes (después de aceptar compromiso) */}
-                  {hasAcceptedCommitment && !hasShared && (
+                  {/* Paso 2: Compartir en redes (después de aceptar compromiso para ITSCHOOL, o directamente para SEC) */}
+                  {((institution === 'ITSCHOOL' && hasAcceptedCommitment) || institution === 'SEC') && !hasShared && (
                     <div className="bg-gradient-to-r from-blue-50 to-indigo-50 border-2 border-blue-200 rounded-lg p-6 mb-4">
                       <p className="text-blue-900 text-center font-bold text-xl mb-2">
                         🎉 ¡Compartí tu logro!
@@ -514,6 +544,7 @@ export default function CursoPage() {
                         className="w-full bg-gradient-to-r from-[#4285F4] to-[#393185] text-white"
                         token={certificateToken || undefined}
                         generatedAt={new Date().toISOString()}
+                        institution={institution}
                       />
                     </div>
                   )}
@@ -543,6 +574,7 @@ export default function CursoPage() {
                         compact={true}
                         token={certificateToken || undefined}
                         generatedAt={new Date().toISOString()}
+                        institution={institution}
                       />
                     </div>
                   )}
@@ -557,7 +589,10 @@ export default function CursoPage() {
                     {!hasShared && (
                       <span className="absolute left-4 top-1/2 transform -translate-y-1/2">🔒</span>
                     )}
-                    {downloadingPdf ? '⏳ Descargando...' : hasShared ? '📄 Descargar Certificado PDF' : !hasAcceptedCommitment ? '📄 Primero aceptá la carta de compromiso ☝️' : '📄 Primero compartí tu logro ☝️'}
+                    {downloadingPdf ? '⏳ Descargando...' : 
+                      hasShared ? '📄 Descargar Certificado PDF' : 
+                      (institution === 'SEC' ? '📄 Primeró compartí tu logro ☝️' : 
+                        (!hasAcceptedCommitment ? '📄 Primero aceptá la carta de compromiso ☝️' : '📄 Primeró compartí tu logro ☝️'))}
                   </button>
 
                   <a
