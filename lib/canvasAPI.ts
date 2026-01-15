@@ -39,9 +39,13 @@ const GET_COURSE_ENROLLMENTS = `
 
 // Query para obtener assignments de un curso
 const GET_COURSE_ASSIGNMENTS = `
-  query GetCourseAssignments($courseId: ID!) {
+  query GetCourseAssignments($courseId: ID!, $after: String) {
     course(id: $courseId) {
-      assignmentsConnection {
+      assignmentsConnection(first: 100, after: $after) {
+        pageInfo {
+          hasNextPage
+          endCursor
+        }
         nodes {
           _id
           name
@@ -194,17 +198,34 @@ export async function getStudentSubmission(
 // Función para buscar el assignment "Test Final" o similar en un curso
 export async function findFinalExamAssignment(courseId: string): Promise<string | null> {
   try {
-    const data: any = await client.request(GET_COURSE_ASSIGNMENTS, { courseId });
-    const assignments = data.course?.assignmentsConnection?.nodes || [];
+    // Obtener TODOS los assignments con paginación
+    let allAssignments: any[] = [];
+    let hasNextPage = true;
+    let after: string | null = null;
     
-    console.log('📚 Assignments encontrados en el curso:');
-    assignments.forEach((a: any, idx: number) => {
+    while (hasNextPage) {
+      const data: any = await client.request(GET_COURSE_ASSIGNMENTS, { courseId, after });
+      const pageData = data.course?.assignmentsConnection;
+      
+      if (!pageData) break;
+      
+      const assignments = pageData.nodes || [];
+      allAssignments = [...allAssignments, ...assignments];
+      
+      console.log(`📄 Página de assignments obtenida: ${assignments.length} (Total: ${allAssignments.length})`);
+      
+      hasNextPage = pageData.pageInfo?.hasNextPage || false;
+      after = pageData.pageInfo?.endCursor || null;
+    }
+    
+    console.log(`📚 Total assignments encontrados en el curso: ${allAssignments.length}`);
+    allAssignments.forEach((a: any, idx: number) => {
       console.log(`  ${idx + 1}. "${a.name}" (ID: ${a._id})`);
     });
     
     // Buscar assignment que contenga "test final" o "examen final"
     // EXCLUIR "Trabajo Práctico Final" o "TP Final"
-    const finalExam = assignments.find((a: any) => {
+    const finalExam = allAssignments.find((a: any) => {
       const name = a.name.toLowerCase();
       const isTest = name.includes('test final') || 
                      name.includes('examen final') || 
