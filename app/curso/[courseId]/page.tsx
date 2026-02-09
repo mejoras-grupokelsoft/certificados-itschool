@@ -574,7 +574,7 @@ export default function CursoPage() {
                         compact={true}
                         token={certificateToken || undefined}
                         generatedAt={new Date().toISOString()}
-                        institution={institution}
+                        institution={institution || undefined}
                       />
                     </div>
                   )}

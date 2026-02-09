@@ -64,6 +64,7 @@ async function main() {
           generatedAt: new Date().toISOString(),
           validationUrl: TEST_VALIDATION_URL,
           token: `test-${course.courseId}`,
+          institution: course.courseName.endsWith('- SEC') ? 'SEC' : 'ITSCHOOL',
         };
 
         // Generar PDF

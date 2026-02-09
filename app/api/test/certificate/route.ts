@@ -60,6 +60,7 @@ export async function POST(request: NextRequest) {
       validationUrl: 'https://certificados.itschool.com.ar/validar/test-token',
       token: `test-${courseId}-${Date.now()}`,
       generatedAt: new Date().toISOString(),
+      institution: courseConfig.courseName.endsWith('- SEC') ? 'SEC' : 'ITSCHOOL',
     };
 
     // Generar PDF
