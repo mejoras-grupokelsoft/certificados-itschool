@@ -12,6 +12,7 @@
   },
   "dependencies": {
     "@netlify/plugin-nextjs": "^5.14.7",
+    "@supabase/supabase-js": "^2.95.3",
     "@upstash/redis": "^1.35.6",
     "googleapis": "^166.0.0",
     "graphql-request": "^7.3.4",

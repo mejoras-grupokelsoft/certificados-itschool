@@ -1,14 +1,62 @@
-import { Redis } from '@upstash/redis';
+import { createClient } from '@supabase/supabase-js';
 import { createHash } from 'crypto';
 import type { CertificateData } from './types';
 
-const BUILD_ID = `certificateStorage-${new Date().toISOString()}-${Date.now()}`;
-const BUILD_TIMESTAMP = Date.now();
-console.log(`📦 certificateStorage loaded - BUILD_ID: ${BUILD_ID}, TIMESTAMP: ${BUILD_TIMESTAMP}`);
+// Configurar cliente de Supabase
+const supabase = createClient(
+  process.env.SUPABASE_URL!,
+  process.env.SUPABASE_SERVICE_ROLE_KEY!
+);
 
-// Configurar cliente de Redis con Upstash
-// Usa las variables de entorno UPSTASH_REDIS_REST_URL y UPSTASH_REDIS_REST_TOKEN
-const redis = Redis.fromEnv();
+const TABLE = 'certificates';
+
+/**
+ * Convierte un row de Supabase (snake_case) a CertificateData (camelCase)
+ */
+function rowToCertificate(row: Record<string, unknown>): CertificateData {
+  return {
+    token: row.token as string,
+    studentName: row.student_name as string,
+    studentEmail: row.student_email as string,
+    courseName: row.course_name as string,
+    courseId: row.course_id as string,
+    completionDate: row.completion_date as string,
+    instructorName: row.instructor_name as string,
+    duration: row.duration as string,
+    score: row.score as number,
+    validationUrl: row.validation_url as string,
+    generatedAt: row.generated_at as string,
+    institution: (row.institution as 'ITSCHOOL' | 'SEC') || 'ITSCHOOL',
+    hasBeenDownloaded: row.has_been_downloaded as boolean || false,
+    firstDownloadAt: row.first_download_at as string | undefined,
+    hasAcceptedCommitment: row.has_accepted_commitment as boolean || false,
+    commitmentAcceptedAt: row.commitment_accepted_at as string | undefined,
+  };
+}
+
+/**
+ * Convierte CertificateData (camelCase) a formato de Supabase (snake_case)
+ */
+function certificateToRow(data: CertificateData) {
+  return {
+    token: data.token,
+    student_name: data.studentName,
+    student_email: data.studentEmail,
+    course_name: data.courseName,
+    course_id: data.courseId,
+    completion_date: data.completionDate,
+    instructor_name: data.instructorName,
+    duration: data.duration,
+    score: data.score,
+    validation_url: data.validationUrl,
+    generated_at: data.generatedAt,
+    institution: data.institution || 'ITSCHOOL',
+    has_been_downloaded: data.hasBeenDownloaded || false,
+    first_download_at: data.firstDownloadAt || null,
+    has_accepted_commitment: data.hasAcceptedCommitment || false,
+    commitment_accepted_at: data.commitmentAcceptedAt || null,
+  };
+}
 
 /**
  * Genera un token único y determinístico para el certificado
@@ -21,73 +69,78 @@ export function generateCertificateToken(studentEmail: string, courseId: string)
 }
 
 /**
- * Guarda los datos del certificado en Upstash Redis
- * La key usa el formato: certificate:{token}
- * Los datos se guardan indefinidamente (sin expiración)
+ * Guarda los datos del certificado en Supabase
  */
 export async function saveCertificate(
   token: string,
   data: CertificateData
 ): Promise<void> {
-  const key = `certificate:${token}`;
-  await redis.set(key, JSON.stringify(data));
+  const row = certificateToRow(data);
+
+  const { error } = await supabase
+    .from(TABLE)
+    .upsert(row, { onConflict: 'token' });
+
+  if (error) {
+    console.error(`❌ Error guardando certificado ${token.slice(0, 10)}...:`, error.message);
+    throw new Error(`Failed to save certificate: ${error.message}`);
+  }
 }
 
 /**
- * Recupera los datos de un certificado desde Upstash Redis
- * Si el certificado no tiene el campo 'institution', le asigna 'ITSCHOOL' por defecto
- * (migración automática para certificados antiguos)
+ * Recupera los datos de un certificado desde Supabase
  */
 export async function getCertificate(token: string): Promise<CertificateData | null> {
-  const key = `certificate:${token}`;
-  const data = await redis.get<string>(key);
-  
-  if (!data) {
+  const { data, error } = await supabase
+    .from(TABLE)
+    .select('*')
+    .eq('token', token)
+    .single();
+
+  if (error || !data) {
     return null;
   }
-  
-  try {
-    const certificate = typeof data === 'string' ? JSON.parse(data) : data as CertificateData;
-    
-    // Migración automática: agregar institution si no existe
-    if (!certificate.institution) {
-      console.log(`🔄 Migrando certificado ${token.slice(0, 10)}... agregando institution: 'ITSCHOOL'`);
-      certificate.institution = 'ITSCHOOL';
-      // Guardar el certificado actualizado
-      await saveCertificate(token, certificate);
-    }
-    
-    return certificate;
-  } catch {
-    return null;
-  }
+
+  return rowToCertificate(data);
 }
 
 /**
  * Verifica si un certificado existe
  */
 export async function certificateExists(token: string): Promise<boolean> {
-  const key = `certificate:${token}`;
-  const exists = await redis.exists(key);
-  return exists === 1;
+  const { count, error } = await supabase
+    .from(TABLE)
+    .select('token', { count: 'exact', head: true })
+    .eq('token', token);
+
+  if (error) return false;
+  return (count ?? 0) > 0;
 }
 
 /**
- * Lista todos los certificados (para debugging/admin)
- * CUIDADO: Puede ser costoso en producción si hay muchos certificados
+ * Lista todos los tokens de certificados (para debugging/admin)
  */
 export async function listCertificates(limit: number = 100): Promise<string[]> {
-  const keys = await redis.keys('certificate:*');
-  return keys.slice(0, limit);
+  const { data, error } = await supabase
+    .from(TABLE)
+    .select('token')
+    .limit(limit);
+
+  if (error || !data) return [];
+  return data.map((row: { token: string }) => `certificate:${row.token}`);
 }
 
 /**
  * Elimina un certificado (para testing o correcciones)
  */
 export async function deleteCertificate(token: string): Promise<boolean> {
-  const key = `certificate:${token}`;
-  const deleted = await redis.del(key);
-  return deleted === 1;
+  const { error, count } = await supabase
+    .from(TABLE)
+    .delete({ count: 'exact' })
+    .eq('token', token);
+
+  if (error) return false;
+  return (count ?? 0) > 0;
 }
 
 /**
@@ -97,14 +150,28 @@ export async function updateCertificate(
   token: string,
   updates: Partial<CertificateData>
 ): Promise<boolean> {
-  const existing = await getCertificate(token);
-  if (!existing) {
+  // Convertir solo los campos proporcionados a snake_case
+  const snakeUpdates: Record<string, unknown> = {};
+  if (updates.hasBeenDownloaded !== undefined) snakeUpdates.has_been_downloaded = updates.hasBeenDownloaded;
+  if (updates.firstDownloadAt !== undefined) snakeUpdates.first_download_at = updates.firstDownloadAt;
+  if (updates.hasAcceptedCommitment !== undefined) snakeUpdates.has_accepted_commitment = updates.hasAcceptedCommitment;
+  if (updates.commitmentAcceptedAt !== undefined) snakeUpdates.commitment_accepted_at = updates.commitmentAcceptedAt;
+  if (updates.institution !== undefined) snakeUpdates.institution = updates.institution;
+  if (updates.studentName !== undefined) snakeUpdates.student_name = updates.studentName;
+  if (updates.courseName !== undefined) snakeUpdates.course_name = updates.courseName;
+  if (updates.instructorName !== undefined) snakeUpdates.instructor_name = updates.instructorName;
+  if (updates.score !== undefined) snakeUpdates.score = updates.score;
+
+  const { error, count } = await supabase
+    .from(TABLE)
+    .update(snakeUpdates, { count: 'exact' })
+    .eq('token', token);
+
+  if (error) {
+    console.error(`❌ Error actualizando certificado ${token.slice(0, 10)}...:`, error.message);
     return false;
   }
-  
-  const updated = { ...existing, ...updates };
-  await saveCertificate(token, updated);
-  return true;
+  return (count ?? 0) > 0;
 }
 
 /**
