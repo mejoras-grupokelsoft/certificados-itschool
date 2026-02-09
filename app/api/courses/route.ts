@@ -5,21 +5,17 @@ export async function GET() {
   try {
     console.log('🔍 Fetching all courses from Google Sheets (standard + SEC)...');
     
-    // Obtener cursos estándar
-    console.log('🔍 Fetching standard courses...');
-    const standardCourses = await getCourseConfigs(false);
-    console.log(`✅ Found ${standardCourses.length} standard courses`);
-    
-    // Intentar obtener cursos SEC (no fallar si no están disponibles)
-    let secCourses: any[] = [];
-    try {
-      console.log('🔍 Fetching SEC courses...');
-      secCourses = await getCourseConfigs(true);
-      console.log(`✅ Found ${secCourses.length} SEC courses`);
-    } catch (secError) {
-      console.warn('⚠️ No se pudieron cargar cursos SEC (spreadsheet no disponible o sin permisos)');
-      console.warn('Detalles:', secError instanceof Error ? secError.message : secError);
-    }
+    // Obtener cursos estándar y SEC en PARALELO
+    const [standardCourses, secCoursesResult] = await Promise.all([
+      getCourseConfigs(false),
+      getCourseConfigs(true).catch((secError) => {
+        console.warn('⚠️ No se pudieron cargar cursos SEC:', secError instanceof Error ? secError.message : secError);
+        return [];
+      })
+    ]);
+
+    const secCourses = secCoursesResult;
+    console.log(`✅ Found ${standardCourses.length} standard + ${secCourses.length} SEC courses`);
     
     // Combinar y marcar tipo
     const allCourses = [
@@ -27,14 +23,16 @@ export async function GET() {
       ...secCourses.map(course => ({ ...course, type: 'sec' as const }))
     ];
     
-    console.log(`✅ Total courses: ${allCourses.length} (${standardCourses.length} standard + ${secCourses.length} SEC)`);
-    
     return NextResponse.json({ 
       courses: allCourses,
       count: allCourses.length,
       breakdown: {
         standard: standardCourses.length,
         sec: secCourses.length
+      }
+    }, {
+      headers: {
+        'Cache-Control': 'public, s-maxage=300, stale-while-revalidate=600',
       }
     });
   } catch (error) {
