@@ -182,107 +182,84 @@ interface CertificateSheetData {
 }
 
 /**
- * Obtiene el próximo ID disponible para certificados
+ * Obtiene el próximo ID disponible leyendo solo las filas con datos reales.
+ * Ignora filas vacías con formato para no contar celdas vacías como ocupadas.
  */
 async function getNextCertificateId(spreadsheetId: string): Promise<number> {
-  try {
-    const response = await sheets.spreadsheets.values.get({
-      spreadsheetId,
-      range: 'Certificados!A:A', // Solo columna A (IDs)
-    });
-
-    const rows = response.data.values || [];
-    
-    // Si no hay filas o solo hay header, empezar en 1
-    if (rows.length <= 1) {
-      return 1;
-    }
-    
-    // Obtener el último ID y sumar 1
-    const lastId = parseInt(rows[rows.length - 1][0], 10);
-    return isNaN(lastId) ? 1 : lastId + 1;
-  } catch (error) {
-    console.error('Error obteniendo siguiente ID de certificado:', error);
-    return 1;
-  }
+  const response = await sheets.spreadsheets.values.get({
+    spreadsheetId,
+    range: 'Certificados!A2:B', // Columnas A (ID) y B (Hash)
+  });
+  const rows = (response.data.values || []).filter(row => row[1] && row[1].trim() !== '');
+  if (rows.length === 0) return 1;
+  const lastId = parseInt(rows[rows.length - 1][0], 10);
+  return isNaN(lastId) ? rows.length + 1 : lastId + 1;
 }
 
 /**
- * Verifica si un certificado ya existe en la hoja por su hash
+ * Verifica si un certificado ya existe en la hoja por su hash.
  */
 async function certificateExistsInSheet(hash: string, spreadsheetId: string): Promise<boolean> {
-  try {
-    const response = await sheets.spreadsheets.values.get({
-      spreadsheetId,
-      range: 'Certificados!B:B', // Columna B (Hash)
-    });
-
-    const rows = response.data.values || [];
-    return rows.some(row => row[0] === hash);
-  } catch (error) {
-    console.error('Error verificando existencia de certificado:', error);
-    return false;
-  }
+  const response = await sheets.spreadsheets.values.get({
+    spreadsheetId,
+    range: 'Certificados!B2:B',
+  });
+  return (response.data.values || []).some(row => row[0] === hash);
 }
 
 /**
- * Guarda un nuevo certificado en la hoja "Certificados"
+ * Guarda un nuevo certificado en la hoja "Certificados".
  * Columnas: ID | Hash | Nombre y apellido | Mail | Curso
- * 
+ *
+ * Usa batchUpdate para escribir exactamente en la primera fila vacía real
+ * (leyendo cuántas filas con datos hay), evitando el problema de que
+ * append inserte en fila 1001 cuando hay formato aplicado a celdas vacías.
+ *
  * Si isSEC=true, escribe en GOOGLE_SHEETS_SPREADSHEET_ID_SEC.
  * Si isSEC=false (default), escribe en GOOGLE_SHEETS_SPREADSHEET_ID.
- * 
+ *
  * @returns true si se guardó exitosamente, false si ya existía o hubo error
  */
 export async function saveCertificateToSheet(data: CertificateSheetData): Promise<boolean> {
   const isSEC = data.isSEC === true;
   const spreadsheetId = isSEC ? GOOGLE_SHEETS_SPREADSHEET_ID_SEC : GOOGLE_SHEETS_SPREADSHEET_ID;
-  
-  console.log(`📋 [Sheets] Guardando certificado en hoja ${isSEC ? 'SEC' : 'ITSCHOOL'}:`, { hash: data.hash.slice(0, 10) + '...', studentName: data.studentName });
+  const label = isSEC ? 'SEC' : 'ITSCHOOL';
+
+  console.log(`📋 [Sheets] Guardando certificado en hoja ${label}:`, { hash: data.hash.slice(0, 10) + '...', studentName: data.studentName });
   console.log('📋 [Sheets] Spreadsheet ID:', spreadsheetId?.slice(0, 10) + '...');
 
   if (!spreadsheetId) {
     console.error(`❌ [Sheets] Falta variable GOOGLE_SHEETS_SPREADSHEET_ID${isSEC ? '_SEC' : ''}, no se puede guardar`);
     return false;
   }
-  
+
   try {
-    // Verificar si ya existe
-    console.log('📋 [Sheets] Verificando si certificado ya existe...');
+    // Verificar duplicado
     const exists = await certificateExistsInSheet(data.hash, spreadsheetId);
     if (exists) {
       console.log('📋 Certificado ya existe en Sheets, no se duplica:', data.hash);
       return false;
     }
-    console.log('📋 [Sheets] Certificado no existe, procediendo a guardar...');
 
-    // Obtener siguiente ID
+    // Obtener siguiente ID y calcular fila destino (encabezado en fila 1, datos desde fila 2)
     const nextId = await getNextCertificateId(spreadsheetId);
-    console.log('📋 [Sheets] Siguiente ID:', nextId);
+    const targetRow = nextId + 1; // fila 2 = ID 1, fila 3 = ID 2, etc.
 
-    // Preparar fila
-    const row = [
-      nextId.toString(),
-      data.hash,
-      data.studentName,
-      data.studentEmail,
-      data.courseName,
-    ];
+    console.log(`📋 [Sheets] Escribiendo en fila ${targetRow} (ID ${nextId})`);
 
-    // Agregar fila a la hoja
-    await sheets.spreadsheets.values.append({
+    await sheets.spreadsheets.values.update({
       spreadsheetId,
-      range: 'Certificados!A:E',
+      range: `Certificados!A${targetRow}`,
       valueInputOption: 'RAW',
       requestBody: {
-        values: [row],
+        values: [[nextId.toString(), data.hash, data.studentName, data.studentEmail, data.courseName]],
       },
     });
 
-    console.log(`✅ Certificado guardado en Sheets ${isSEC ? 'SEC' : 'ITSCHOOL'}:`, { id: nextId, hash: data.hash });
+    console.log(`✅ Certificado guardado en Sheets ${label}: { id: ${nextId}, fila: ${targetRow} }`);
     return true;
   } catch (error) {
-    console.error(`❌ Error guardando certificado en Sheets ${isSEC ? 'SEC' : 'ITSCHOOL'}:`, error);
+    console.error(`❌ Error guardando certificado en Sheets ${label}:`, error);
     return false;
   }
 }
