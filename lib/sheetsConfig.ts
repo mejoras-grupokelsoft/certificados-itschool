@@ -178,15 +178,16 @@ interface CertificateSheetData {
   studentName: string;
   studentEmail: string;
   courseName: string;
+  isSEC?: boolean; // Si true, guarda en el spreadsheet SEC
 }
 
 /**
  * Obtiene el próximo ID disponible para certificados
  */
-async function getNextCertificateId(): Promise<number> {
+async function getNextCertificateId(spreadsheetId: string): Promise<number> {
   try {
     const response = await sheets.spreadsheets.values.get({
-      spreadsheetId: GOOGLE_SHEETS_SPREADSHEET_ID,
+      spreadsheetId,
       range: 'Certificados!A:A', // Solo columna A (IDs)
     });
 
@@ -209,10 +210,10 @@ async function getNextCertificateId(): Promise<number> {
 /**
  * Verifica si un certificado ya existe en la hoja por su hash
  */
-async function certificateExistsInSheet(hash: string): Promise<boolean> {
+async function certificateExistsInSheet(hash: string, spreadsheetId: string): Promise<boolean> {
   try {
     const response = await sheets.spreadsheets.values.get({
-      spreadsheetId: GOOGLE_SHEETS_SPREADSHEET_ID,
+      spreadsheetId,
       range: 'Certificados!B:B', // Columna B (Hash)
     });
 
@@ -228,16 +229,27 @@ async function certificateExistsInSheet(hash: string): Promise<boolean> {
  * Guarda un nuevo certificado en la hoja "Certificados"
  * Columnas: ID | Hash | Nombre y apellido | Mail | Curso
  * 
+ * Si isSEC=true, escribe en GOOGLE_SHEETS_SPREADSHEET_ID_SEC.
+ * Si isSEC=false (default), escribe en GOOGLE_SHEETS_SPREADSHEET_ID.
+ * 
  * @returns true si se guardó exitosamente, false si ya existía o hubo error
  */
 export async function saveCertificateToSheet(data: CertificateSheetData): Promise<boolean> {
-  console.log('📋 [Sheets] Intentando guardar certificado:', { hash: data.hash.slice(0, 10) + '...', studentName: data.studentName });
-  console.log('📋 [Sheets] Spreadsheet ID:', GOOGLE_SHEETS_SPREADSHEET_ID?.slice(0, 10) + '...');
+  const isSEC = data.isSEC === true;
+  const spreadsheetId = isSEC ? GOOGLE_SHEETS_SPREADSHEET_ID_SEC : GOOGLE_SHEETS_SPREADSHEET_ID;
+  
+  console.log(`📋 [Sheets] Guardando certificado en hoja ${isSEC ? 'SEC' : 'ITSCHOOL'}:`, { hash: data.hash.slice(0, 10) + '...', studentName: data.studentName });
+  console.log('📋 [Sheets] Spreadsheet ID:', spreadsheetId?.slice(0, 10) + '...');
+
+  if (!spreadsheetId) {
+    console.error(`❌ [Sheets] Falta variable GOOGLE_SHEETS_SPREADSHEET_ID${isSEC ? '_SEC' : ''}, no se puede guardar`);
+    return false;
+  }
   
   try {
     // Verificar si ya existe
     console.log('📋 [Sheets] Verificando si certificado ya existe...');
-    const exists = await certificateExistsInSheet(data.hash);
+    const exists = await certificateExistsInSheet(data.hash, spreadsheetId);
     if (exists) {
       console.log('📋 Certificado ya existe en Sheets, no se duplica:', data.hash);
       return false;
@@ -245,7 +257,7 @@ export async function saveCertificateToSheet(data: CertificateSheetData): Promis
     console.log('📋 [Sheets] Certificado no existe, procediendo a guardar...');
 
     // Obtener siguiente ID
-    const nextId = await getNextCertificateId();
+    const nextId = await getNextCertificateId(spreadsheetId);
     console.log('📋 [Sheets] Siguiente ID:', nextId);
 
     // Preparar fila
@@ -259,7 +271,7 @@ export async function saveCertificateToSheet(data: CertificateSheetData): Promis
 
     // Agregar fila a la hoja
     await sheets.spreadsheets.values.append({
-      spreadsheetId: GOOGLE_SHEETS_SPREADSHEET_ID,
+      spreadsheetId,
       range: 'Certificados!A:E',
       valueInputOption: 'RAW',
       requestBody: {
@@ -267,10 +279,10 @@ export async function saveCertificateToSheet(data: CertificateSheetData): Promis
       },
     });
 
-    console.log('✅ Certificado guardado en Sheets:', { id: nextId, hash: data.hash });
+    console.log(`✅ Certificado guardado en Sheets ${isSEC ? 'SEC' : 'ITSCHOOL'}:`, { id: nextId, hash: data.hash });
     return true;
   } catch (error) {
-    console.error('❌ Error guardando certificado en Sheets:', error);
+    console.error(`❌ Error guardando certificado en Sheets ${isSEC ? 'SEC' : 'ITSCHOOL'}:`, error);
     return false;
   }
 }

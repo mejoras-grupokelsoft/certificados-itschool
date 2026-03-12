@@ -8,7 +8,9 @@
     "start": "next start",
     "lint": "eslint",
     "test:certificates": "cross-env DOTENV_CONFIG_PATH=.env.local tsx -r dotenv/config scripts/test-certificates.ts",
-    "extract:emails": "tsx scripts/extract-emails.ts"
+    "extract:emails": "tsx scripts/extract-emails.ts",
+    "backfill:sheets": "cross-env DOTENV_CONFIG_PATH=.env.local tsx -r dotenv/config scripts/backfill-sheets-from-supabase.ts",
+    "backfill:sheets:dry": "cross-env DOTENV_CONFIG_PATH=.env.local tsx -r dotenv/config scripts/backfill-sheets-from-supabase.ts --dry-run"
   },
   "dependencies": {
     "@netlify/plugin-nextjs": "^5.14.7",

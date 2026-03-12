@@ -103,12 +103,14 @@ export async function POST(request: NextRequest) {
     console.log('✅ Certificado guardado con token:', token);
 
     // Guardar en Google Sheets (nueva hoja "Certificados")
+    // SEC va al spreadsheet SEC, ITSCHOOL al estándar
     try {
       await saveCertificateToSheet({
         hash: token,
         studentName,
         studentEmail,
         courseName,
+        isSEC: institution === 'SEC',
       });
     } catch (sheetError) {
       console.error('⚠️ Error guardando en Sheets (no crítico):', sheetError);
